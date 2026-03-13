@@ -1,8 +1,12 @@
-import { useAuthorSubscription } from "../hooks/useAuthorSubscription";
+import type { Author } from "../api/types";
 
-export function AuthorLiveFeed() {
-  const { newAuthors, error, clearFeed } = useAuthorSubscription();
+interface AuthorLiveFeedProps {
+  newAuthors: Author[];
+  error: string | null;
+  clearFeed: () => void;
+}
 
+export function AuthorLiveFeed({ newAuthors, error, clearFeed }: AuthorLiveFeedProps) {
   if (error) {
     return <div className="live-feed live-feed--error">{error}</div>;
   }

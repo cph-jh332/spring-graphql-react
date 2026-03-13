@@ -7,7 +7,13 @@ import type { Author } from "../api/types";
 import { AddAuthorForm } from "../components/AddAuthorForm";
 import { AuthorLiveFeed } from "../components/AuthorLiveFeed";
 
-export function AuthorsPage() {
+interface AuthorsPageProps {
+  newAuthors: Author[];
+  feedError: string | null;
+  clearFeed: () => void;
+}
+
+export function AuthorsPage({ newAuthors, feedError, clearFeed }: AuthorsPageProps) {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
 
@@ -34,7 +40,7 @@ export function AuthorsPage() {
         </button>
       </div>
 
-      <AuthorLiveFeed />
+      <AuthorLiveFeed newAuthors={newAuthors} error={feedError} clearFeed={clearFeed} />
 
       {isLoading && <p className="loading">Loading authors...</p>}
       {isError && (

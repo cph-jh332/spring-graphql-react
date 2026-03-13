@@ -70,11 +70,23 @@ export const BOOK_ADDED_SUBSCRIPTION = gql`
   }
 `;
 
+export const BOOK_DELETED_SUBSCRIPTION = gql`
+  subscription OnBookDeleted {
+    bookDeleted
+  }
+`;
+
 export const AUTHOR_ADDED_SUBSCRIPTION = gql`
   subscription OnAuthorAdded {
     authorAdded {
       id
       name
     }
+  }
+`;
+
+export const AUTHOR_DELETED_SUBSCRIPTION = gql`
+  subscription OnAuthorDeleted {
+    authorDeleted
   }
 `;

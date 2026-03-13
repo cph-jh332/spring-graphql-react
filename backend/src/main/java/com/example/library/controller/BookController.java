@@ -60,4 +60,10 @@ public class BookController {
     public Flux<Book> bookAdded() {
         return bookService.getBookAddedStream();
     }
+
+    /** GraphQL subscription — streams the ID of each deleted book over WebSocket. */
+    @SubscriptionMapping
+    public Flux<String> bookDeleted() {
+        return bookService.getBookDeletedStream();
+    }
 }

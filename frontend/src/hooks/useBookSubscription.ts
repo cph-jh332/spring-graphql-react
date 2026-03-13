@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { wsClient } from "../api/wsClient";
-import { BOOK_ADDED_SUBSCRIPTION } from "../api/queries";
+import { BOOK_ADDED_SUBSCRIPTION, BOOK_DELETED_SUBSCRIPTION } from "../api/queries";
 import type { Book } from "../api/types";
 
 export function useBookSubscription() {
@@ -10,16 +10,13 @@ export function useBookSubscription() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const unsubscribe = wsClient.subscribe<{ bookAdded: Book }>(
+    const unsubscribeAdded = wsClient.subscribe<{ bookAdded: Book }>(
       { query: BOOK_ADDED_SUBSCRIPTION },
       {
         next: ({ data }) => {
           if (data?.bookAdded) {
-            // Show the new book in the live feed strip
             setNewBooks((prev) => [data.bookAdded, ...prev].slice(0, 20));
-            // Invalidate the books query so every open browser tab refetches the list
             queryClient.invalidateQueries({ queryKey: ["books"] });
-            // Also invalidate authors so the author page reflects the new book
             queryClient.invalidateQueries({ queryKey: ["authors"] });
           }
         },
@@ -27,13 +24,28 @@ export function useBookSubscription() {
           console.error("Subscription error:", err);
           setError("Lost connection to live feed.");
         },
-        complete: () => {
-          console.log("Subscription completed.");
-        },
+        complete: () => console.log("bookAdded subscription completed."),
       }
     );
 
-    return () => unsubscribe();
+    const unsubscribeDeleted = wsClient.subscribe<{ bookDeleted: string }>(
+      { query: BOOK_DELETED_SUBSCRIPTION },
+      {
+        next: ({ data }) => {
+          if (data?.bookDeleted) {
+            queryClient.invalidateQueries({ queryKey: ["books"] });
+            queryClient.invalidateQueries({ queryKey: ["authors"] });
+          }
+        },
+        error: (err) => console.error("bookDeleted subscription error:", err),
+        complete: () => console.log("bookDeleted subscription completed."),
+      }
+    );
+
+    return () => {
+      unsubscribeAdded();
+      unsubscribeDeleted();
+    };
   }, [queryClient]);
 
   const clearFeed = () => setNewBooks([]);

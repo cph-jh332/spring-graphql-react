@@ -14,7 +14,9 @@ type Mutation {
 
 type Subscription {
     bookAdded: Book!
+    bookDeleted: ID!
     authorAdded: Author!
+    authorDeleted: ID!
 }
 
 type Book {

@@ -27,6 +27,9 @@ public class BookService {
      */
     private final Sinks.Many<Book> bookSink = Sinks.many().multicast().directBestEffort();
 
+    /** Hot sink that broadcasts the ID of each deleted book. */
+    private final Sinks.Many<String> bookDeletedSink = Sinks.many().multicast().directBestEffort();
+
     public BookService(BookRepository bookRepository, AuthorRepository authorRepository) {
         this.bookRepository = bookRepository;
         this.authorRepository = authorRepository;
@@ -65,6 +68,7 @@ public class BookService {
 
     public Mono<Boolean> delete(String id) {
         return bookRepository.deleteById(id)
+                .doOnSuccess(v -> bookDeletedSink.tryEmitNext(id))
                 .thenReturn(true)
                 .onErrorReturn(false);
     }
@@ -75,5 +79,9 @@ public class BookService {
      */
     public Flux<Book> getBookAddedStream() {
         return bookSink.asFlux();
+    }
+
+    public Flux<String> getBookDeletedStream() {
+        return bookDeletedSink.asFlux();
     }
 }

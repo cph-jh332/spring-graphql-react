@@ -3,9 +3,11 @@ package com.example.library.service;
 import com.example.library.document.Author;
 import com.example.library.dto.AuthorInput;
 import com.example.library.repository.AuthorRepository;
+import com.example.library.repository.BookRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
@@ -16,6 +18,7 @@ import reactor.core.publisher.Sinks;
 public class AuthorService {
 
     private final AuthorRepository authorRepository;
+    private final BookRepository bookRepository;
 
     /**
      * Hot sink that broadcasts newly created authors to all active GraphQL subscriptions.
@@ -26,6 +29,9 @@ public class AuthorService {
      * - does NOT replay past events to late subscribers
      */
     private final Sinks.Many<Author> authorSink = Sinks.many().multicast().directBestEffort();
+
+    /** Hot sink that broadcasts the ID of each deleted author. */
+    private final Sinks.Many<String> authorDeletedSink = Sinks.many().multicast().directBestEffort();
 
     public Flux<Author> findAll() {
         return authorRepository.findAll()
@@ -50,9 +56,14 @@ public class AuthorService {
     }
 
     public Mono<Boolean> delete(String id) {
-        return authorRepository.deleteById(id)
+        return bookRepository.deleteByAuthorId(id)
+                .then(authorRepository.deleteById(id))
+                .doOnSuccess(v -> authorDeletedSink.tryEmitNext(id))
                 .thenReturn(true)
-                .onErrorReturn(false);
+                .onErrorResume(e -> {
+                    log.error("Failed to delete author {}: {}", id, e.getMessage());
+                    return Mono.just(false);
+                });
     }
 
     /**
@@ -61,5 +72,9 @@ public class AuthorService {
      */
     public Flux<Author> getAuthorAddedStream() {
         return authorSink.asFlux();
+    }
+
+    public Flux<String> getAuthorDeletedStream() {
+        return authorDeletedSink.asFlux();
     }
 }

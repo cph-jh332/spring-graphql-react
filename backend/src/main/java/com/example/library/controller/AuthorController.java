@@ -60,4 +60,10 @@ public class AuthorController {
     public Flux<Author> authorAdded() {
         return authorService.getAuthorAddedStream();
     }
+
+    /** GraphQL subscription — streams the ID of each deleted author over WebSocket. */
+    @SubscriptionMapping
+    public Flux<String> authorDeleted() {
+        return authorService.getAuthorDeletedStream();
+    }
 }

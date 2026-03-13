@@ -4,6 +4,7 @@ import { BooksPage } from "./pages/BooksPage";
 import { AuthorsPage } from "./pages/AuthorsPage";
 import { GraphiQLPage } from "./pages/GraphiQLPage";
 import { useBookSubscription } from "./hooks/useBookSubscription";
+import { useAuthorSubscription } from "./hooks/useAuthorSubscription";
 import "./index.css";
 
 const queryClient = new QueryClient({
@@ -19,9 +20,10 @@ function Layout() {
   const { pathname } = useLocation();
   const isGraphiQL = pathname === "/graphiql";
 
-  // Keep the book subscription alive at the app root so the authors page
-  // receives cache invalidations even when the books page is not mounted.
-  const { newBooks, error: feedError, clearFeed } = useBookSubscription();
+  // Both subscriptions are kept alive at the app root so cache invalidations
+  // fire regardless of which page is currently mounted.
+  const { newBooks, error: bookFeedError, clearFeed: clearBookFeed } = useBookSubscription();
+  const { newAuthors, error: authorFeedError, clearFeed: clearAuthorFeed } = useAuthorSubscription();
 
   return (
     <div className="app">
@@ -49,8 +51,8 @@ function Layout() {
       ) : (
         <main className="app-main">
           <Routes>
-            <Route path="/" element={<BooksPage newBooks={newBooks} feedError={feedError} clearFeed={clearFeed} />} />
-            <Route path="/authors" element={<AuthorsPage />} />
+            <Route path="/" element={<BooksPage newBooks={newBooks} feedError={bookFeedError} clearFeed={clearBookFeed} />} />
+            <Route path="/authors" element={<AuthorsPage newAuthors={newAuthors} feedError={authorFeedError} clearFeed={clearAuthorFeed} />} />
           </Routes>
         </main>
       )}
