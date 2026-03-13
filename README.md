@@ -130,3 +130,4 @@ type Subscription {
 | `VITE_GRAPHQL_URL` | `/graphql` | HTTP GraphQL endpoint |
 | `VITE_GRAPHQL_WS_URL` | `ws://<host>/graphql` | WebSocket endpoint |
 # spring-graphql-react
+# spring-graphql-react
