@@ -7,14 +7,14 @@ A reactive monorepo POC — Spring Boot (WebFlux) + Spring for GraphQL + Reactiv
 ```
 spring-graphql-react/
 ├── backend/   Spring Boot 3.x (WebFlux, Spring GraphQL, Reactive MongoDB)
-└── frontend/  Vite + React 18 + TypeScript
+└── frontend/  Vite + React 19 + TypeScript
 ```
 
 All data flows are fully non-blocking end-to-end:
 
 - **Backend**: `ReactiveMongoRepository` → `Mono`/`Flux` service layer → Spring GraphQL controllers
-- **Frontend**: React Query manages async state; `graphql-ws` handles the real-time subscription over WebSocket
-- **Subscription**: A `Sinks.Many<Book>` in `BookService` broadcasts each newly created book to all active WebSocket subscribers
+- **Frontend**: React Query manages async state; `graphql-ws` handles real-time subscriptions over WebSocket
+- **Subscriptions**: `Sinks.Many` hot multicasts in `BookService` and `AuthorService` broadcast new entities to all active WebSocket subscribers
 
 ## Prerequisites
 
@@ -53,10 +53,9 @@ mvn spring-boot:run
 The backend starts on **http://localhost:8080**.
 
 - GraphQL endpoint: `http://localhost:8080/graphql`
-- GraphiQL playground: `http://localhost:8080/graphiql`
 - WebSocket: `ws://localhost:8080/graphql`
 
-On startup, `DataSeeder` drops and re-creates the database with 3 authors and 6 books.
+On first startup, `DataSeeder` seeds 3 authors and 6 books if the database is empty. Existing data is never deleted on restart.
 
 ### 3. Start the frontend
 
@@ -72,9 +71,9 @@ The Vite dev server proxies all `/graphql` requests (HTTP and WebSocket) to the 
 
 ## Features
 
-- **Books page** — list, add, and delete books
-- **Authors page** — list, add, and delete authors with their book collections
-- **Live Feed** — real-time strip powered by a GraphQL subscription (`bookAdded`) via WebSocket; pulses green when active
+- **Books page** — list, add, and delete books; real-time live feed via `bookAdded` subscription
+- **Authors page** — list, add, and delete authors with their book collections; real-time live feed via `authorAdded` subscription; automatically updates when a book is added to an author
+- **Live feeds** — WebSocket subscription strips that pulse green when active, showing the last 20 events
 
 ## GraphQL Schema
 
@@ -95,8 +94,24 @@ type Mutation {
 
 type Subscription {
   bookAdded: Book!
+  authorAdded: Author!
+}
+
+type Book {
+  id: ID!
+  title: String!
+  year: Int!
+  author: Author!
+}
+
+type Author {
+  id: ID!
+  name: String!
+  books: [Book!]!
 }
 ```
+
+`Book.author` and `Author.books` are virtual fields resolved via `@SchemaMapping` — the MongoDB documents only store `authorId` as a string foreign key.
 
 ## Key implementation notes
 
@@ -107,10 +122,10 @@ type Subscription {
 | Schema-first GraphQL | `resources/graphql/schema.graphqls` |
 | Reactive repository | `BookRepository`, `AuthorRepository` extend `ReactiveMongoRepository` |
 | Reactive service layer | `BookService`, `AuthorService` return `Mono`/`Flux` |
-| Subscription via `Sinks` | `BookService.bookSink` (`Sinks.Many.multicast`) emitted on `addBook` |
+| Subscriptions via `Sinks` | `bookSink` and `authorSink` (`Sinks.Many.multicast().directBestEffort()`) emitted on `addBook` / `addAuthor` |
 | N+1 avoidance | `@SchemaMapping` resolvers on `Book.author` and `Author.books` are called lazily — one DB call per field access, not one per list item |
-| CORS | Reactive `CorsWebFilter` allows `localhost:5173` |
-| Data seeding | `DataSeeder implements ApplicationRunner` using reactive chains |
+| CORS | Reactive `CorsWebFilter` allows `localhost:5173` and `localhost:3000` |
+| Data seeding | `DataSeeder implements ApplicationRunner` — checks `authorRepository.count()` first; skips if data already exists |
 
 ### Frontend
 
@@ -119,9 +134,9 @@ type Subscription {
 | Server state | `@tanstack/react-query` — `useQuery` / `useMutation` |
 | GraphQL HTTP client | `graphql-request` (`gqlClient`) |
 | GraphQL WebSocket | `graphql-ws` (`wsClient`) |
-| Subscription hook | `useBookSubscription` — manages lifecycle, appends to local state |
-| Query invalidation | Mutations invalidate `["books"]` / `["authors"]` cache keys |
-| Typed GQL | Queries and mutations defined in `src/api/queries.ts` / `mutations.ts` with TypeScript interfaces in `types.ts` |
+| Subscription hooks | `useBookSubscription`, `useAuthorSubscription` — manage WS lifecycle, maintain rolling local buffer of last 20 events |
+| Query invalidation | `bookAdded` events invalidate both `["books"]` and `["authors"]` cache keys so the authors page updates reactively when a book is added |
+| Typed GQL | Queries/subscriptions in `src/api/queries.ts`, mutations in `src/api/mutations.ts`, TypeScript interfaces in `src/api/types.ts` |
 
 ## Environment variables (frontend)
 
@@ -129,5 +144,3 @@ type Subscription {
 |---|---|---|
 | `VITE_GRAPHQL_URL` | `/graphql` | HTTP GraphQL endpoint |
 | `VITE_GRAPHQL_WS_URL` | `ws://<host>/graphql` | WebSocket endpoint |
-# spring-graphql-react
-# spring-graphql-react

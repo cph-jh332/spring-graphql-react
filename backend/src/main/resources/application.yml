@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: library
+
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/librarydb
+      auto-index-creation: true
+
+  graphql:
+    websocket:
+      path: /graphql
+    graphiql:
+      enabled: false   # served by the React frontend at /graphiql instead
+
+server:
+  port: 8080
+
+logging:
+  level:
+    com.example: DEBUG
+    org.springframework.data.mongodb: DEBUG

@@ -1,0 +1,13 @@
+/home/joachim/Dev/spring-graphql-react/backend/src/main/java/com/example/library/LibraryApplication.java
+/home/joachim/Dev/spring-graphql-react/backend/src/main/java/com/example/library/config/CorsConfig.java
+/home/joachim/Dev/spring-graphql-react/backend/src/main/java/com/example/library/config/DataSeeder.java
+/home/joachim/Dev/spring-graphql-react/backend/src/main/java/com/example/library/controller/AuthorController.java
+/home/joachim/Dev/spring-graphql-react/backend/src/main/java/com/example/library/controller/BookController.java
+/home/joachim/Dev/spring-graphql-react/backend/src/main/java/com/example/library/document/Author.java
+/home/joachim/Dev/spring-graphql-react/backend/src/main/java/com/example/library/document/Book.java
+/home/joachim/Dev/spring-graphql-react/backend/src/main/java/com/example/library/dto/AuthorInput.java
+/home/joachim/Dev/spring-graphql-react/backend/src/main/java/com/example/library/dto/BookInput.java
+/home/joachim/Dev/spring-graphql-react/backend/src/main/java/com/example/library/repository/AuthorRepository.java
+/home/joachim/Dev/spring-graphql-react/backend/src/main/java/com/example/library/repository/BookRepository.java
+/home/joachim/Dev/spring-graphql-react/backend/src/main/java/com/example/library/service/AuthorService.java
+/home/joachim/Dev/spring-graphql-react/backend/src/main/java/com/example/library/service/BookService.java
