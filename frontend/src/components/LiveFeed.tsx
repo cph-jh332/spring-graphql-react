@@ -1,8 +1,12 @@
-import { useBookSubscription } from "../hooks/useBookSubscription";
+import type { Book } from "../api/types";
 
-export function LiveFeed() {
-  const { newBooks, error, clearFeed } = useBookSubscription();
+interface LiveFeedProps {
+  newBooks: Book[];
+  error: string | null;
+  clearFeed: () => void;
+}
 
+export function LiveFeed({ newBooks, error, clearFeed }: LiveFeedProps) {
   if (error) {
     return <div className="live-feed live-feed--error">{error}</div>;
   }

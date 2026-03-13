@@ -3,6 +3,7 @@ import { BrowserRouter, Link, NavLink, Route, Routes, useLocation } from "react-
 import { BooksPage } from "./pages/BooksPage";
 import { AuthorsPage } from "./pages/AuthorsPage";
 import { GraphiQLPage } from "./pages/GraphiQLPage";
+import { useBookSubscription } from "./hooks/useBookSubscription";
 import "./index.css";
 
 const queryClient = new QueryClient({
@@ -17,6 +18,10 @@ const queryClient = new QueryClient({
 function Layout() {
   const { pathname } = useLocation();
   const isGraphiQL = pathname === "/graphiql";
+
+  // Keep the book subscription alive at the app root so the authors page
+  // receives cache invalidations even when the books page is not mounted.
+  const { newBooks, error: feedError, clearFeed } = useBookSubscription();
 
   return (
     <div className="app">
@@ -44,7 +49,7 @@ function Layout() {
       ) : (
         <main className="app-main">
           <Routes>
-            <Route path="/" element={<BooksPage />} />
+            <Route path="/" element={<BooksPage newBooks={newBooks} feedError={feedError} clearFeed={clearFeed} />} />
             <Route path="/authors" element={<AuthorsPage />} />
           </Routes>
         </main>

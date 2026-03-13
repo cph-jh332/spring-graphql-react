@@ -7,7 +7,13 @@ import { AddBookForm } from "../components/AddBookForm";
 import { BookList } from "../components/BookList";
 import { LiveFeed } from "../components/LiveFeed";
 
-export function BooksPage() {
+interface BooksPageProps {
+  newBooks: Book[];
+  feedError: string | null;
+  clearFeed: () => void;
+}
+
+export function BooksPage({ newBooks, feedError, clearFeed }: BooksPageProps) {
   const [showForm, setShowForm] = useState(false);
 
   const { data, isLoading, isError, error } = useQuery<{ books: Book[] }>({
@@ -24,7 +30,7 @@ export function BooksPage() {
         </button>
       </div>
 
-      <LiveFeed />
+      <LiveFeed newBooks={newBooks} error={feedError} clearFeed={clearFeed} />
 
       {isLoading && <p className="loading">Loading books...</p>}
       {isError && (
