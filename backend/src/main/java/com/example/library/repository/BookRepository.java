@@ -12,4 +12,8 @@ public interface BookRepository extends ReactiveMongoRepository<Book, String> {
     Flux<Book> findByAuthorId(String authorId);
 
     Mono<Void> deleteByAuthorId(String authorId);
+
+    Flux<Book> findByTitleContainingIgnoreCase(String title);
+
+    Flux<Book> findByAuthorIdIn(Iterable<String> authorIds);
 }

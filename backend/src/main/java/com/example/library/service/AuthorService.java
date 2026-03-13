@@ -38,6 +38,28 @@ public class AuthorService {
                 .doOnNext(a -> log.debug("Found author: {}", a.getName()));
     }
 
+    /**
+     * Returns authors whose name contains {@code query} (case-insensitive) OR who
+     * have written a book whose title contains {@code query}. Results are deduplicated
+     * by author id. Falls back to {@link #findAll()} when {@code query} is null or blank.
+     */
+    public Flux<Author> search(String query) {
+        if (query == null || query.isBlank()) {
+            return findAll();
+        }
+        Flux<Author> byName = authorRepository.findByNameContainingIgnoreCase(query);
+
+        // Find author ids from books whose title matches, then look up those authors
+        Flux<Author> byBookTitle = bookRepository.findByTitleContainingIgnoreCase(query)
+                .map(book -> book.getAuthorId())
+                .distinct()
+                .collectList()
+                .flatMapMany(ids -> ids.isEmpty() ? Flux.empty() : authorRepository.findByIdIn(ids));
+
+        return Flux.merge(byName, byBookTitle)
+                .distinct(Author::getId);
+    }
+
     public Mono<Author> findById(String id) {
         return authorRepository.findById(id)
                 .switchIfEmpty(Mono.error(new RuntimeException("Author not found: " + id)));

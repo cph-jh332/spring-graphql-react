@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { gqlClient } from "../api/client";
 import { GET_AUTHORS } from "../api/queries";
 import { DELETE_AUTHOR } from "../api/mutations";
@@ -16,10 +16,19 @@ interface AuthorsPageProps {
 export function AuthorsPage({ newAuthors, feedError, clearFeed }: AuthorsPageProps) {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchInput.trim() || undefined);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   const { data, isLoading, isError, error } = useQuery<{ authors: Author[] }>({
-    queryKey: ["authors"],
-    queryFn: () => gqlClient.request(GET_AUTHORS),
+    queryKey: ["authors", debouncedQuery],
+    queryFn: () => gqlClient.request(GET_AUTHORS, { query: debouncedQuery }),
   });
 
   const deleteMutation = useMutation({
@@ -40,6 +49,16 @@ export function AuthorsPage({ newAuthors, feedError, clearFeed }: AuthorsPagePro
         </button>
       </div>
 
+      <div className="search-bar">
+        <input
+          type="search"
+          className="search-input"
+          placeholder="Search by author name or book title..."
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+        />
+      </div>
+
       <AuthorLiveFeed newAuthors={newAuthors} error={feedError} clearFeed={clearFeed} />
 
       {isLoading && <p className="loading">Loading authors...</p>}
@@ -52,8 +71,15 @@ export function AuthorsPage({ newAuthors, feedError, clearFeed }: AuthorsPagePro
 
       {data && (
         <div className="author-list">
+          {debouncedQuery && (
+            <p className="search-result-count">
+              {data.authors.length} result{data.authors.length !== 1 ? "s" : ""} for &ldquo;{debouncedQuery}&rdquo;
+            </p>
+          )}
           {data.authors.length === 0 && (
-            <p className="empty-state">No authors found. Add one!</p>
+            <p className="empty-state">
+              {debouncedQuery ? "No authors match your search." : "No authors found. Add one!"}
+            </p>
           )}
           {data.authors.map((author) => (
             <div key={author.id} className="author-card">

@@ -24,8 +24,8 @@ public class BookController {
     private final AuthorService authorService;
 
     @QueryMapping
-    public Flux<Book> books() {
-        return bookService.findAll();
+    public Flux<Book> books(@Argument String query) {
+        return bookService.search(query);
     }
 
     @QueryMapping

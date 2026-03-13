@@ -40,6 +40,27 @@ public class BookService {
                 .doOnNext(b -> log.debug("Found book: {}", b.getTitle()));
     }
 
+    /**
+     * Returns books whose title contains {@code query} (case-insensitive) OR whose
+     * author's name contains {@code query}. Results are deduplicated by book id.
+     * Falls back to {@link #findAll()} when {@code query} is null or blank.
+     */
+    public Flux<Book> search(String query) {
+        if (query == null || query.isBlank()) {
+            return findAll();
+        }
+        Flux<Book> byTitle = bookRepository.findByTitleContainingIgnoreCase(query);
+
+        // Find author ids matching the query, then look up their books
+        Flux<Book> byAuthorName = authorRepository.findByNameContainingIgnoreCase(query)
+                .map(author -> author.getId())
+                .collectList()
+                .flatMapMany(ids -> ids.isEmpty() ? Flux.empty() : bookRepository.findByAuthorIdIn(ids));
+
+        return Flux.merge(byTitle, byAuthorName)
+                .distinct(Book::getId);
+    }
+
     public Mono<Book> findById(String id) {
         return bookRepository.findById(id)
                 .switchIfEmpty(Mono.error(new RuntimeException("Book not found: " + id)));

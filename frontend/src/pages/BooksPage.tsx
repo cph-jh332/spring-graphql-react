@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { gqlClient } from "../api/client";
 import { GET_BOOKS } from "../api/queries";
 import type { Book } from "../api/types";
@@ -15,10 +15,19 @@ interface BooksPageProps {
 
 export function BooksPage({ newBooks, feedError, clearFeed }: BooksPageProps) {
   const [showForm, setShowForm] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchInput.trim() || undefined);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   const { data, isLoading, isError, error } = useQuery<{ books: Book[] }>({
-    queryKey: ["books"],
-    queryFn: () => gqlClient.request(GET_BOOKS),
+    queryKey: ["books", debouncedQuery],
+    queryFn: () => gqlClient.request(GET_BOOKS, { query: debouncedQuery }),
   });
 
   return (
@@ -30,6 +39,16 @@ export function BooksPage({ newBooks, feedError, clearFeed }: BooksPageProps) {
         </button>
       </div>
 
+      <div className="search-bar">
+        <input
+          type="search"
+          className="search-input"
+          placeholder="Search by title or author name..."
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+        />
+      </div>
+
       <LiveFeed newBooks={newBooks} error={feedError} clearFeed={clearFeed} />
 
       {isLoading && <p className="loading">Loading books...</p>}
@@ -39,7 +58,16 @@ export function BooksPage({ newBooks, feedError, clearFeed }: BooksPageProps) {
           {error instanceof Error ? error.message : "Unknown error"}
         </p>
       )}
-      {data && <BookList books={data.books} />}
+      {data && (
+        <>
+          {debouncedQuery && (
+            <p className="search-result-count">
+              {data.books.length} result{data.books.length !== 1 ? "s" : ""} for &ldquo;{debouncedQuery}&rdquo;
+            </p>
+          )}
+          <BookList books={data.books} />
+        </>
+      )}
 
       {showForm && <AddBookForm onClose={() => setShowForm(false)} />}
     </div>

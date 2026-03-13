@@ -1,8 +1,8 @@
 import { gql } from "graphql-request";
 
 export const GET_BOOKS = gql`
-  query GetBooks {
-    books {
+  query GetBooks($query: String) {
+    books(query: $query) {
       id
       title
       year
@@ -29,8 +29,8 @@ export const GET_BOOK = gql`
 `;
 
 export const GET_AUTHORS = gql`
-  query GetAuthors {
-    authors {
+  query GetAuthors($query: String) {
+    authors(query: $query) {
       id
       name
       books {
