@@ -2,7 +2,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { gqlClient } from "../api/client";
 import { ADD_AUTHOR } from "../api/mutations";
-import type { Author } from "../api/types";
 
 interface AddAuthorFormProps {
   onClose: () => void;
@@ -14,7 +13,7 @@ export function AddAuthorForm({ onClose }: AddAuthorFormProps) {
 
   const mutation = useMutation({
     mutationFn: (input: { name: string }) =>
-      gqlClient.request<{ addAuthor: Author }>(ADD_AUTHOR, { input }),
+      gqlClient.request(ADD_AUTHOR, { input }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["authors"] });
       onClose();

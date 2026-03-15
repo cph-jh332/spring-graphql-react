@@ -2,10 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { gqlClient } from "../api/client";
 import { GET_BOOKS } from "../api/queries";
-import type { Book } from "../api/types";
+import type { GetBooksQuery } from "../gql/graphql";
 import { AddBookForm } from "../components/AddBookForm";
+import { BookDetailModal } from "../components/BookDetailModal";
 import { BookList } from "../components/BookList";
 import { LiveFeed } from "../components/LiveFeed";
+
+type Book = GetBooksQuery["books"][number];
 
 interface BooksPageProps {
   newBooks: Book[];
@@ -17,6 +20,7 @@ export function BooksPage({ newBooks, feedError, clearFeed }: BooksPageProps) {
   const [showForm, setShowForm] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState<string | undefined>(undefined);
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -25,7 +29,7 @@ export function BooksPage({ newBooks, feedError, clearFeed }: BooksPageProps) {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  const { data, isLoading, isError, error } = useQuery<{ books: Book[] }>({
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: ["books", debouncedQuery],
     queryFn: () => gqlClient.request(GET_BOOKS, { query: debouncedQuery }),
   });
@@ -65,11 +69,18 @@ export function BooksPage({ newBooks, feedError, clearFeed }: BooksPageProps) {
               {data.books.length} result{data.books.length !== 1 ? "s" : ""} for &ldquo;{debouncedQuery}&rdquo;
             </p>
           )}
-          <BookList books={data.books} />
+          <BookList books={data.books} onSelectBook={setSelectedBook} />
         </>
       )}
 
       {showForm && <AddBookForm onClose={() => setShowForm(false)} />}
+
+      {selectedBook && (
+        <BookDetailModal
+          book={selectedBook}
+          onClose={() => setSelectedBook(null)}
+        />
+      )}
     </div>
   );
 }

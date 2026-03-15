@@ -24,6 +24,7 @@ type Book {
     title: String!
     year: Int!
     author: Author!
+    coverImage: String
 }
 
 type Author {

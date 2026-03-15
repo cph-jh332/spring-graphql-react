@@ -13,8 +13,20 @@ spring:
     graphiql:
       enabled: false   # served by the React frontend at /graphiql instead
 
+  # Enable multipart file uploads (Spring WebFlux)
+  webflux:
+    multipart:
+      max-in-memory-size: 5MB
+      max-disk-usage-per-part: 5MB
+      max-parts: 1
+
 server:
   port: 8080
+
+# Directory (relative to working dir) where book cover images are stored
+app:
+  upload:
+    dir: uploads/books
 
 logging:
   level:

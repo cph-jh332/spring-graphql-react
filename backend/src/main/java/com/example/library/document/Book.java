@@ -22,4 +22,7 @@ public class Book {
     private int year;
 
     private String authorId;
+
+    /** Relative URL path to the uploaded cover image, e.g. /uploads/books/abc123.jpg */
+    private String coverImage;
 }

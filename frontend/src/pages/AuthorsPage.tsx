@@ -3,12 +3,14 @@ import { useEffect, useState } from "react";
 import { gqlClient } from "../api/client";
 import { GET_AUTHORS } from "../api/queries";
 import { DELETE_AUTHOR } from "../api/mutations";
-import type { Author } from "../api/types";
+import type { OnAuthorAddedSubscription } from "../gql/graphql";
 import { AddAuthorForm } from "../components/AddAuthorForm";
 import { AuthorLiveFeed } from "../components/AuthorLiveFeed";
 
+type NewAuthor = OnAuthorAddedSubscription["authorAdded"];
+
 interface AuthorsPageProps {
-  newAuthors: Author[];
+  newAuthors: NewAuthor[];
   feedError: string | null;
   clearFeed: () => void;
 }
@@ -26,14 +28,14 @@ export function AuthorsPage({ newAuthors, feedError, clearFeed }: AuthorsPagePro
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  const { data, isLoading, isError, error } = useQuery<{ authors: Author[] }>({
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: ["authors", debouncedQuery],
     queryFn: () => gqlClient.request(GET_AUTHORS, { query: debouncedQuery }),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) =>
-      gqlClient.request<{ deleteAuthor: boolean }>(DELETE_AUTHOR, { id }),
+      gqlClient.request(DELETE_AUTHOR, { id }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["authors"] });
       queryClient.invalidateQueries({ queryKey: ["books"] });

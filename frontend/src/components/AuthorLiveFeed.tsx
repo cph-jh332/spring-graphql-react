@@ -1,4 +1,6 @@
-import type { Author } from "../api/types";
+import type { OnAuthorAddedSubscription } from "../gql/graphql";
+
+type Author = OnAuthorAddedSubscription["authorAdded"];
 
 interface AuthorLiveFeedProps {
   newAuthors: Author[];

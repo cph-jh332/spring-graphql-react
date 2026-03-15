@@ -1,17 +1,18 @@
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { print } from "graphql";
 import { wsClient } from "../api/wsClient";
 import { BOOK_ADDED_SUBSCRIPTION, BOOK_DELETED_SUBSCRIPTION } from "../api/queries";
-import type { Book } from "../api/types";
+import type { OnBookAddedSubscription, OnBookDeletedSubscription } from "../gql/graphql";
 
 export function useBookSubscription() {
-  const [newBooks, setNewBooks] = useState<Book[]>([]);
+  const [newBooks, setNewBooks] = useState<OnBookAddedSubscription["bookAdded"][]>([]);
   const [error, setError] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const unsubscribeAdded = wsClient.subscribe<{ bookAdded: Book }>(
-      { query: BOOK_ADDED_SUBSCRIPTION },
+    const unsubscribeAdded = wsClient.subscribe<OnBookAddedSubscription>(
+      { query: print(BOOK_ADDED_SUBSCRIPTION) },
       {
         next: ({ data }) => {
           if (data?.bookAdded) {
@@ -28,8 +29,8 @@ export function useBookSubscription() {
       }
     );
 
-    const unsubscribeDeleted = wsClient.subscribe<{ bookDeleted: string }>(
-      { query: BOOK_DELETED_SUBSCRIPTION },
+    const unsubscribeDeleted = wsClient.subscribe<OnBookDeletedSubscription>(
+      { query: print(BOOK_DELETED_SUBSCRIPTION) },
       {
         next: ({ data }) => {
           if (data?.bookDeleted) {

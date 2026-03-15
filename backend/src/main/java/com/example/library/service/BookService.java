@@ -95,6 +95,23 @@ public class BookService {
     }
 
     /**
+     * Sets (or clears) the cover image path for a book.
+     *
+     * @param id        the book id
+     * @param imagePath relative URL path to the stored image, or {@code null} to remove it
+     * @return the updated Book
+     */
+    public Mono<Book> updateCoverImage(String id, String imagePath) {
+        return bookRepository.findById(id)
+                .switchIfEmpty(Mono.error(new RuntimeException("Book not found: " + id)))
+                .flatMap(book -> {
+                    book.setCoverImage(imagePath);
+                    return bookRepository.save(book);
+                })
+                .doOnNext(book -> log.debug("Updated cover for book {}: {}", id, imagePath));
+    }
+
+    /**
      * Returns a cold Flux over the hot sink — each subscriber receives all events
      * emitted after they subscribe.
      */

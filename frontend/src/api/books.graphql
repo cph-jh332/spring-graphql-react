@@ -1,0 +1,42 @@
+query GetBooks($query: String) {
+  books(query: $query) {
+    id
+    title
+    year
+    coverImage
+    author {
+      id
+      name
+    }
+  }
+}
+
+query GetBook($id: ID!) {
+  book(id: $id) {
+    id
+    title
+    year
+    coverImage
+    author {
+      id
+      name
+    }
+  }
+}
+
+subscription OnBookAdded {
+  bookAdded {
+    id
+    title
+    year
+    coverImage
+    author {
+      id
+      name
+    }
+  }
+}
+
+subscription OnBookDeleted {
+  bookDeleted
+}

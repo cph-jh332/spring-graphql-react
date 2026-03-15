@@ -1,4 +1,6 @@
-import type { Book } from "../api/types";
+import type { OnBookAddedSubscription } from "../gql/graphql";
+
+type Book = OnBookAddedSubscription["bookAdded"];
 
 interface LiveFeedProps {
   newBooks: Book[];

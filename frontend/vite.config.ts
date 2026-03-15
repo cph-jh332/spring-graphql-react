@@ -13,6 +13,16 @@ export default defineConfig({
         changeOrigin: true,
         ws: true, // also proxy WebSocket upgrades for subscriptions
       },
+      // Proxy REST upload/delete endpoints
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+      // Proxy uploaded static files (book covers)
+      '/uploads': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
     },
   },
 })

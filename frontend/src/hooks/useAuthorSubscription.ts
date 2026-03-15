@@ -1,17 +1,18 @@
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { print } from "graphql";
 import { wsClient } from "../api/wsClient";
 import { AUTHOR_ADDED_SUBSCRIPTION, AUTHOR_DELETED_SUBSCRIPTION } from "../api/queries";
-import type { Author } from "../api/types";
+import type { OnAuthorAddedSubscription, OnAuthorDeletedSubscription } from "../gql/graphql";
 
 export function useAuthorSubscription() {
-  const [newAuthors, setNewAuthors] = useState<Author[]>([]);
+  const [newAuthors, setNewAuthors] = useState<OnAuthorAddedSubscription["authorAdded"][]>([]);
   const [error, setError] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const unsubscribeAdded = wsClient.subscribe<{ authorAdded: Author }>(
-      { query: AUTHOR_ADDED_SUBSCRIPTION },
+    const unsubscribeAdded = wsClient.subscribe<OnAuthorAddedSubscription>(
+      { query: print(AUTHOR_ADDED_SUBSCRIPTION) },
       {
         next: ({ data }) => {
           if (data?.authorAdded) {
@@ -27,8 +28,8 @@ export function useAuthorSubscription() {
       }
     );
 
-    const unsubscribeDeleted = wsClient.subscribe<{ authorDeleted: string }>(
-      { query: AUTHOR_DELETED_SUBSCRIPTION },
+    const unsubscribeDeleted = wsClient.subscribe<OnAuthorDeletedSubscription>(
+      { query: print(AUTHOR_DELETED_SUBSCRIPTION) },
       {
         next: ({ data }) => {
           if (data?.authorDeleted) {
