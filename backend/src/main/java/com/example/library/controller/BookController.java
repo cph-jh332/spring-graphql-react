@@ -8,13 +8,18 @@ import com.example.library.service.BookService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.graphql.data.method.annotation.Argument;
+import org.springframework.graphql.data.method.annotation.BatchMapping;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
-import org.springframework.graphql.data.method.annotation.SchemaMapping;
 import org.springframework.graphql.data.method.annotation.SubscriptionMapping;
 import org.springframework.stereotype.Controller;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 @Controller
 @RequiredArgsConstructor
@@ -44,12 +49,34 @@ public class BookController {
     }
 
     /**
-     * Resolves the `author` field on Book type.
-     * Called per Book instance — fetches the Author by the stored authorId.
+     * Batched resolver for {@code Book.author}: one author query per GraphQL request.
      */
-    @SchemaMapping(typeName = "Book", field = "author")
-    public Mono<Author> author(Book book) {
-        return authorService.findById(book.getAuthorId());
+    @BatchMapping(typeName = "Book", field = "author")
+    public Mono<Map<Book, Author>> author(List<Book> books) {
+        if (books == null || books.isEmpty()) {
+            return Mono.just(Map.of());
+        }
+        var ids = books.stream()
+                .map(Book::getAuthorId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        return authorService.findByIdsMapped(ids)
+                .map(authorsById -> {
+                    Map<Book, Author> out = HashMap.newHashMap(books.size());
+                    for (Book book : books) {
+                        String authorId = book.getAuthorId();
+                        if (authorId == null) {
+                            throw new RuntimeException("Author not found: null");
+                        }
+                        Author author = authorsById.get(authorId);
+                        if (author == null) {
+                            throw new RuntimeException("Author not found: " + authorId);
+                        }
+                        out.put(book, author);
+                    }
+                    return out;
+                });
     }
 
     /**

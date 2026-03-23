@@ -8,6 +8,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.Collection;
+import java.util.Map;
+import java.util.Objects;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
@@ -63,6 +67,20 @@ public class AuthorService {
     public Mono<Author> findById(String id) {
         return authorRepository.findById(id)
                 .switchIfEmpty(Mono.error(new RuntimeException("Author not found: " + id)));
+    }
+
+    /**
+     * Loads many authors by id in one query. Used by GraphQL {@code @BatchMapping} for {@code Book.author}.
+     */
+    public Mono<Map<String, Author>> findByIdsMapped(Collection<String> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return Mono.just(Map.of());
+        }
+        var distinct = ids.stream().filter(Objects::nonNull).distinct().toList();
+        if (distinct.isEmpty()) {
+            return Mono.just(Map.of());
+        }
+        return authorRepository.findByIdIn(distinct).collectMap(Author::getId);
     }
 
     public Mono<Author> create(AuthorInput input) {

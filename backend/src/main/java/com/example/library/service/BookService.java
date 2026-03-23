@@ -10,6 +10,12 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 @Slf4j
 @Service
 public class BookService {
@@ -68,6 +74,28 @@ public class BookService {
 
     public Flux<Book> findByAuthorId(String authorId) {
         return bookRepository.findByAuthorId(authorId);
+    }
+
+    /**
+     * Loads books for many author ids in one query, grouped by {@link Book#getAuthorId()}.
+     * Used by GraphQL {@code @BatchMapping} for {@code Author.books}.
+     */
+    public Mono<Map<String, List<Book>>> findByAuthorIdsGrouped(Collection<String> authorIds) {
+        if (authorIds == null || authorIds.isEmpty()) {
+            return Mono.just(Map.of());
+        }
+        var distinct = authorIds.stream().distinct().toList();
+        return bookRepository.findByAuthorIdIn(distinct)
+                .collectList()
+                .map(list -> {
+                    Map<String, List<Book>> grouped = list.stream()
+                            .collect(Collectors.groupingBy(Book::getAuthorId));
+                    Map<String, List<Book>> result = new HashMap<>();
+                    for (String id : distinct) {
+                        result.put(id, List.copyOf(grouped.getOrDefault(id, List.of())));
+                    }
+                    return result;
+                });
     }
 
     public Mono<Book> create(BookInput input) {
