@@ -9,6 +9,8 @@
 /home/joachim/Dev/spring-graphql-react/backend/src/main/java/com/example/library/document/Book.java
 /home/joachim/Dev/spring-graphql-react/backend/src/main/java/com/example/library/dto/AuthorInput.java
 /home/joachim/Dev/spring-graphql-react/backend/src/main/java/com/example/library/dto/BookInput.java
+/home/joachim/Dev/spring-graphql-react/backend/src/main/java/com/example/library/filter/GraphQlWideEventInterceptor.java
+/home/joachim/Dev/spring-graphql-react/backend/src/main/java/com/example/library/filter/WideEventFilter.java
 /home/joachim/Dev/spring-graphql-react/backend/src/main/java/com/example/library/repository/AuthorRepository.java
 /home/joachim/Dev/spring-graphql-react/backend/src/main/java/com/example/library/repository/BookRepository.java
 /home/joachim/Dev/spring-graphql-react/backend/src/main/java/com/example/library/service/AuthorService.java

@@ -2,10 +2,10 @@ package com.example.library.service;
 
 import com.example.library.document.Author;
 import com.example.library.dto.AuthorInput;
+import com.example.library.filter.WideEventFilter;
 import com.example.library.repository.AuthorRepository;
 import com.example.library.repository.BookRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
@@ -16,7 +16,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthorService {
@@ -38,8 +37,7 @@ public class AuthorService {
     private final Sinks.Many<String> authorDeletedSink = Sinks.many().multicast().directBestEffort();
 
     public Flux<Author> findAll() {
-        return authorRepository.findAll()
-                .doOnNext(a -> log.debug("Found author: {}", a.getName()));
+        return authorRepository.findAll();
     }
 
     /**
@@ -88,11 +86,7 @@ public class AuthorService {
                 .name(input.name())
                 .build();
         return authorRepository.save(author)
-                .doOnNext(a -> {
-                    log.debug("Created author: {}", a.getId());
-                    Sinks.EmitResult result = authorSink.tryEmitNext(a);
-                    log.debug("Author emit result: {}", result);
-                });
+                .doOnNext(a -> authorSink.tryEmitNext(a));
     }
 
     public Mono<Boolean> delete(String id) {
@@ -100,10 +94,17 @@ public class AuthorService {
                 .then(authorRepository.deleteById(id))
                 .doOnSuccess(v -> authorDeletedSink.tryEmitNext(id))
                 .thenReturn(true)
-                .onErrorResume(e -> {
-                    log.error("Failed to delete author {}: {}", id, e.getMessage());
+                .onErrorResume(e -> Mono.deferContextual(ctx -> {
+                    // Surface error into the wide event if a field map is present in context
+                    if (ctx.hasKey(WideEventFilter.WIDE_EVENT_KEY)) {
+                        @SuppressWarnings("unchecked")
+                        java.util.Map<String, String> fields =
+                                (java.util.Map<String, String>) ctx.get(WideEventFilter.WIDE_EVENT_KEY);
+                        fields.put("error.message", e.getMessage());
+                        fields.put("error.type", e.getClass().getSimpleName());
+                    }
                     return Mono.just(false);
-                });
+                }));
     }
 
     /**

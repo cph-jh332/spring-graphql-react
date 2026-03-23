@@ -1,7 +1,7 @@
 package com.example.library.controller;
 
+import com.example.library.filter.WideEventFilter;
 import com.example.library.service.BookService;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.multipart.FilePart;
@@ -12,10 +12,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-@Slf4j
 @RestController
 @RequestMapping("/api/books")
 public class ImageUploadController {
@@ -34,7 +35,6 @@ public class ImageUploadController {
         this.bookService = bookService;
         this.uploadDir = Paths.get(uploadDirPath).toAbsolutePath().normalize();
         Files.createDirectories(this.uploadDir);
-        log.info("Book cover upload directory: {}", this.uploadDir);
     }
 
     /**
@@ -63,13 +63,22 @@ public class ImageUploadController {
         String filename = id + ext;
         Path dest = uploadDir.resolve(filename);
 
-        // Delete any previous cover (different extension) before writing
-        deleteExistingCovers(id);
+        // Delete any previous cover (different extension) before writing; collect warnings.
+        List<String> deleteWarnings = deleteExistingCovers(id);
 
         return filePart.transferTo(dest)
                 .then(bookService.updateCoverImage(id, "/uploads/books/" + filename))
                 .map(book -> Map.of("coverImage", book.getCoverImage()))
-                .doOnNext(r -> log.debug("Saved cover for book {}: {}", id, dest));
+                .flatMap(result -> Mono.deferContextual(ctx -> {
+                    // Surface any file-deletion warnings into the wide event
+                    if (!deleteWarnings.isEmpty() && ctx.hasKey(WideEventFilter.WIDE_EVENT_KEY)) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, String> fields =
+                                (Map<String, String>) ctx.get(WideEventFilter.WIDE_EVENT_KEY);
+                        fields.put("warning", String.join("; ", deleteWarnings));
+                    }
+                    return Mono.just(result);
+                }));
     }
 
     /**
@@ -79,9 +88,18 @@ public class ImageUploadController {
      */
     @DeleteMapping("/{id}/cover")
     public Mono<Map<String, Boolean>> deleteCover(@PathVariable String id) {
-        deleteExistingCovers(id);
+        List<String> deleteWarnings = deleteExistingCovers(id);
         return bookService.updateCoverImage(id, null)
-                .thenReturn(Map.of("deleted", true));
+                .thenReturn(Map.of("deleted", true))
+                .flatMap(result -> Mono.deferContextual(ctx -> {
+                    if (!deleteWarnings.isEmpty() && ctx.hasKey(WideEventFilter.WIDE_EVENT_KEY)) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, String> fields =
+                                (Map<String, String>) ctx.get(WideEventFilter.WIDE_EVENT_KEY);
+                        fields.put("warning", String.join("; ", deleteWarnings));
+                    }
+                    return Mono.just(result);
+                }));
     }
 
     // ---- helpers ----
@@ -94,14 +112,21 @@ public class ImageUploadController {
         };
     }
 
-    private void deleteExistingCovers(String id) {
+    /**
+     * Deletes any existing cover files for the given book id across all supported extensions.
+     *
+     * @return list of warning messages for files that could not be deleted (empty on success)
+     */
+    private List<String> deleteExistingCovers(String id) {
+        List<String> warnings = new ArrayList<>();
         for (String ext : new String[]{".jpg", ".png", ".webp"}) {
             Path p = uploadDir.resolve(id + ext);
             try {
                 Files.deleteIfExists(p);
             } catch (IOException e) {
-                log.warn("Could not delete old cover {}: {}", p, e.getMessage());
+                warnings.add("Could not delete old cover " + p + ": " + e.getMessage());
             }
         }
+        return warnings;
     }
 }

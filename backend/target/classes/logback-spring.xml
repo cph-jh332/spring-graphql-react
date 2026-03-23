@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!--
+        Wide-event structured logging.
+
+        Each log line is a compact JSON object. Wide-event fields (http.method,
+        http.path, http.status, duration_ms, graphql.*, error.*) are injected as
+        Logstash markers by WideEventFilter and appear as top-level JSON fields
+        via the <logstashMarkers/> provider below.
+
+        Noisy defaults (logger_name, thread_name, level_value, @version) are
+        intentionally omitted to keep each line lean.
+    -->
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <!-- ISO-8601 timestamp -->
+                <timestamp>
+                    <fieldName>ts</fieldName>
+                    <pattern>yyyy-MM-dd'T'HH:mm:ss.SSS'Z'</pattern>
+                    <timeZone>UTC</timeZone>
+                </timestamp>
+
+                <!-- Severity string: INFO / WARN / ERROR -->
+                <logLevel>
+                    <fieldName>level</fieldName>
+                </logLevel>
+
+                <!-- Logger name, shortened so it stays readable -->
+                <loggerName>
+                    <fieldName>logger</fieldName>
+                    <shortenedLoggerNameLength>40</shortenedLoggerNameLength>
+                </loggerName>
+
+                <!-- The log message -->
+                <message>
+                    <fieldName>msg</fieldName>
+                </message>
+
+                <!--
+                    Wide-event fields injected by WideEventFilter via LogstashMarker.
+                    These become top-level sibling keys: http.method, http.path,
+                    http.status, duration_ms, graphql.operation, graphql.field, etc.
+                -->
+                <logstashMarkers/>
+
+                <!-- Full stack trace on errors -->
+                <stackTrace>
+                    <fieldName>exception</fieldName>
+                    <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+                        <maxDepthPerThrowable>20</maxDepthPerThrowable>
+                        <rootCauseFirst>true</rootCauseFirst>
+                    </throwableConverter>
+                </stackTrace>
+            </providers>
+        </encoder>
+    </appender>
+
+    <!-- Application code: INFO and above -->
+    <logger name="com.example" level="INFO" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+
+    <!-- Silence noisy Spring / MongoDB internals except warnings -->
+    <logger name="org.springframework" level="WARN" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+    <logger name="org.mongodb" level="WARN" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+
+    <!--
+        Spring GraphQL logs an ERROR for every unresolved exception via this handler
+        before the exception is converted to a GraphQL error response. That produces a
+        second log line for every mutation/query error, defeating the wide-event goal.
+        The error context is already captured in the wide event itself, so suppress it.
+    -->
+    <logger name="org.springframework.graphql.execution.ExceptionResolversExceptionHandler"
+            level="OFF" additivity="false"/>
+
+    <!--
+        Spring Boot startup banners / lifecycle INFO — not request events, and verbose.
+        The application name and startup time appear in the wide-event startup log anyway.
+    -->
+    <logger name="org.springframework.boot.SpringApplication" level="WARN" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+
+    <!-- Root: WARN for everything else -->
+    <root level="WARN">
+        <appender-ref ref="STDOUT"/>
+    </root>
+
+    <!-- Local dev profile: lower threshold for application code -->
+    <springProfile name="dev">
+        <logger name="com.example" level="DEBUG" additivity="false">
+            <appender-ref ref="STDOUT"/>
+        </logger>
+    </springProfile>
+
+</configuration>

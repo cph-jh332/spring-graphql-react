@@ -4,7 +4,6 @@ import com.example.library.document.Book;
 import com.example.library.dto.BookInput;
 import com.example.library.repository.AuthorRepository;
 import com.example.library.repository.BookRepository;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -16,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@Slf4j
 @Service
 public class BookService {
 
@@ -42,8 +40,7 @@ public class BookService {
     }
 
     public Flux<Book> findAll() {
-        return bookRepository.findAll()
-                .doOnNext(b -> log.debug("Found book: {}", b.getTitle()));
+        return bookRepository.findAll();
     }
 
     /**
@@ -109,10 +106,7 @@ public class BookService {
                             .build();
                     return bookRepository.save(book);
                 })
-                .doOnNext(book -> {
-                    Sinks.EmitResult result = bookSink.tryEmitNext(book);
-                    log.debug("Created book: {} — emit result: {}", book.getId(), result);
-                });
+                .doOnNext(book -> bookSink.tryEmitNext(book));
     }
 
     public Mono<Boolean> delete(String id) {
@@ -135,8 +129,7 @@ public class BookService {
                 .flatMap(book -> {
                     book.setCoverImage(imagePath);
                     return bookRepository.save(book);
-                })
-                .doOnNext(book -> log.debug("Updated cover for book {}: {}", id, imagePath));
+                });
     }
 
     /**

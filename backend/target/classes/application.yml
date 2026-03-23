@@ -28,7 +28,5 @@ app:
   upload:
     dir: uploads/books
 
-logging:
-  level:
-    com.example: DEBUG
-    org.springframework.data.mongodb: DEBUG
+# Log levels are configured in logback-spring.xml (wide-event structured logging).
+# Set the active Spring profile to "dev" to enable DEBUG for com.example.

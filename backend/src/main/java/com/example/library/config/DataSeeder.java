@@ -5,7 +5,9 @@ import com.example.library.document.Book;
 import com.example.library.repository.AuthorRepository;
 import com.example.library.repository.BookRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import net.logstash.logback.marker.Markers;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
@@ -13,27 +15,25 @@ import reactor.core.publisher.Flux;
 
 import java.util.List;
 
-@Slf4j
 @Component
 @RequiredArgsConstructor
 public class DataSeeder implements ApplicationRunner {
+
+    private static final Logger log = LoggerFactory.getLogger(DataSeeder.class);
 
     private final AuthorRepository authorRepository;
     private final BookRepository bookRepository;
 
     @Override
     public void run(ApplicationArguments args) {
-        seedData()
-                .doOnComplete(() -> log.info("Database seeding complete."))
-                .doOnError(e -> log.error("Seeding failed", e))
-                .subscribe();
+        seedData().subscribe();
     }
 
     private Flux<Book> seedData() {
         return authorRepository.count()
                 .flatMapMany(count -> {
                     if (count > 0) {
-                        log.info("Database already contains data, skipping seed.");
+                        log.info(Markers.append("event", "seed.skipped"), "startup");
                         return Flux.empty();
                     }
                     return authorRepository.saveAll(List.of(
@@ -55,7 +55,13 @@ public class DataSeeder implements ApplicationRunner {
                                         Book.builder().title("Foundation").year(1951).authorId(asimov.getId()).build(),
                                         Book.builder().title("I, Robot").year(1950).authorId(asimov.getId()).build()
                                 ));
-                            });
+                            })
+                            .doOnComplete(() -> log.info(Markers.append("event", "seed.complete"), "startup"))
+                            .doOnError(e -> log.error(
+                                    Markers.append("event", "seed.failed")
+                                            .and(Markers.append("error.message", e.getMessage()))
+                                            .and(Markers.append("error.type", e.getClass().getSimpleName())),
+                                    "startup", e));
                 });
     }
 }
