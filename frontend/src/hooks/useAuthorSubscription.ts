@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { print } from "graphql";
-import { wsClient } from "../api/wsClient";
+import { useEffect, useState } from "react";
 import { AUTHOR_ADDED_SUBSCRIPTION, AUTHOR_DELETED_SUBSCRIPTION } from "../api/queries";
+import { wsClient } from "../api/wsClient";
 import type { OnAuthorAddedSubscription, OnAuthorDeletedSubscription } from "../gql/graphql";
 
 export function useAuthorSubscription() {
