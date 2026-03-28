@@ -1,4 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { BookOpen, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { gqlClient } from "../api/client";
 import { DELETE_BOOK } from "../api/mutations";
 import type { GetBooksQuery } from "../gql/graphql";
@@ -22,51 +26,51 @@ export function BookCard({ book, onSelect }: BookCardProps) {
 	});
 
 	return (
-		<div
-			className="book-card"
+		<Card
+			className="flex flex-col gap-1.5 cursor-pointer hover:border-primary transition-colors"
 			onClick={() => onSelect(book)}
-			style={{ cursor: "pointer" }}
 		>
-			<div className="book-cover-thumb">
+			{/* Cover thumbnail */}
+			<div className="w-full aspect-[2/3] rounded-t-xl overflow-hidden bg-secondary flex-shrink-0">
 				{book.coverImage ? (
 					<img
 						src={book.coverImage}
 						alt={`Cover of ${book.title}`}
-						className="book-cover-img"
+						className="w-full h-full object-cover block"
 					/>
 				) : (
-					<div className="book-cover-placeholder" aria-hidden="true">
-						<svg
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							strokeWidth="1.5"
-						>
-							<path
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
-							/>
-						</svg>
+					<div
+						className="w-full h-full flex items-center justify-center text-muted-foreground"
+						aria-hidden="true"
+					>
+						<BookOpen className="w-[40%] h-[40%] opacity-40" />
 					</div>
 				)}
 			</div>
-			<div className="book-card-header">
-				<h3 className="book-title">{book.title}</h3>
-				<button
-					className="btn-delete"
-					onClick={(e) => {
-						e.stopPropagation();
-						deleteMutation.mutate(book.id);
-					}}
-					disabled={deleteMutation.isPending}
-					aria-label={`Delete ${book.title}`}
-				>
-					{deleteMutation.isPending ? "..." : "✕"}
-				</button>
-			</div>
-			<p className="book-author">{book.author.name}</p>
-			<span className="book-year">{book.year}</span>
-		</div>
+
+			<CardContent className="flex flex-col gap-1.5 pt-3">
+				<div className="flex items-start justify-between gap-2">
+					<h3 className="text-base font-semibold text-foreground leading-snug">
+						{book.title}
+					</h3>
+					<Button
+						type="button"
+						variant="ghost"
+						size="icon"
+						className="shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 hover:border-destructive border border-transparent"
+						onClick={(e) => {
+							e.stopPropagation();
+							deleteMutation.mutate(book.id);
+						}}
+						disabled={deleteMutation.isPending}
+						aria-label={`Delete ${book.title}`}
+					>
+						<X className="h-3 w-3" />
+					</Button>
+				</div>
+				<p className="text-sm text-[#818cf8]">{book.author.name}</p>
+				<Badge variant="outline">{book.year}</Badge>
+			</CardContent>
+		</Card>
 	);
 }

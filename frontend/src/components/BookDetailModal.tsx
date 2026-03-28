@@ -1,5 +1,11 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { BookOpen, Upload, X } from "lucide-react";
 import { useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+} from "@/components/ui/dialog";
 import {
 	deleteBookCover,
 	uploadBookCover,
@@ -75,84 +81,77 @@ export function BookDetailModal({ book, onClose }: BookDetailModalProps) {
 	const isBusy = uploading || deleting;
 
 	return (
-		<div className="modal-overlay" onClick={onClose}>
-			<div className="modal modal--detail" onClick={(e) => e.stopPropagation()}>
-				<button className="modal-close" onClick={onClose} aria-label="Close">
-					✕
-				</button>
-
+		<Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+			<DialogContent className="max-w-[480px] p-6 flex flex-col gap-4 max-h-[calc(100svh-48px)] overflow-y-auto">
 				{/* Cover image area */}
-				<div className="detail-cover-wrap">
+				<div className="relative w-full aspect-[2/3] max-h-[340px] max-w-[220px] self-center rounded-xl overflow-hidden bg-secondary border border-border">
 					{coverSrc ? (
 						<img
 							src={coverSrc}
 							alt={`Cover of ${book.title}`}
-							className="detail-cover-img"
+							className="w-full h-full object-cover block"
 						/>
 					) : (
-						<div className="detail-cover-placeholder" aria-hidden="true">
-							<svg
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								strokeWidth="1"
-							>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
-								/>
-							</svg>
+						<div className="w-full h-full flex flex-col items-center justify-center gap-2 text-muted-foreground text-sm">
+							<BookOpen className="w-12 h-12 opacity-40" />
 							<span>No cover</span>
 						</div>
 					)}
 					{uploading && (
-						<div className="cover-uploading-overlay">Uploading…</div>
+						<div className="absolute inset-0 bg-black/55 flex items-center justify-center text-white text-sm font-medium">
+							Uploading…
+						</div>
 					)}
 				</div>
 
 				{/* Book details */}
-				<div className="detail-info">
-					<h2 className="detail-title">{book.title}</h2>
-					<p className="detail-author">{book.author.name}</p>
-					<span className="book-year">{book.year}</span>
+				<div className="flex flex-col gap-1.5 text-center">
+					<h2 className="text-xl font-bold text-foreground">{book.title}</h2>
+					<p className="text-sm text-[#818cf8]">{book.author.name}</p>
+					<span className="text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded-full self-center">
+						{book.year}
+					</span>
 				</div>
 
 				{/* Cover actions */}
-				<div className="detail-cover-actions">
-					<label
-						className="btn btn-secondary"
-						htmlFor="detail-cover-file"
-						style={{ cursor: "pointer" }}
+				<div className="flex gap-2.5 justify-center flex-wrap">
+					<Button
+						type="button"
+						variant="secondary"
+						asChild
+						className="cursor-pointer"
 					>
-						{coverSrc ? "Change cover" : "Upload cover"}
-						<input
-							id="detail-cover-file"
-							ref={fileInputRef}
-							type="file"
-							accept="image/jpeg,image/png,image/webp"
-							onChange={handleFileChange}
-							disabled={isBusy}
-							style={{ display: "none" }}
-						/>
-					</label>
+						<label htmlFor="detail-cover-file" className="cursor-pointer">
+							<Upload className="h-4 w-4" />
+							{coverSrc ? "Change cover" : "Upload cover"}
+							<input
+								id="detail-cover-file"
+								ref={fileInputRef}
+								type="file"
+								accept="image/jpeg,image/png,image/webp"
+								onChange={handleFileChange}
+								disabled={isBusy}
+								className="hidden"
+							/>
+						</label>
+					</Button>
 					{coverSrc && (
-						<button
-							className="btn btn-secondary"
+						<Button
+							type="button"
+							variant="secondary"
 							onClick={handleDeleteCover}
 							disabled={isBusy}
 						>
+							<X className="h-4 w-4" />
 							{deleting ? "Removing…" : "Remove cover"}
-						</button>
+						</Button>
 					)}
 				</div>
 
 				{error && (
-					<p className="error-text" style={{ marginTop: 12 }}>
-						{error}
-					</p>
+					<p className="text-xs text-destructive text-center">{error}</p>
 				)}
-			</div>
-		</div>
+			</DialogContent>
+		</Dialog>
 	);
 }

@@ -1,5 +1,15 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { gqlClient } from "../api/client";
 import { ADD_AUTHOR } from "../api/mutations";
 
@@ -26,44 +36,40 @@ export function AddAuthorForm({ onClose }: AddAuthorFormProps) {
 	};
 
 	return (
-		<div className="modal-overlay" onClick={onClose}>
-			<div className="modal" onClick={(e) => e.stopPropagation()}>
-				<h2>Add New Author</h2>
+		<Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+			<DialogContent className="max-w-[440px]">
+				<DialogHeader>
+					<DialogTitle>Add New Author</DialogTitle>
+				</DialogHeader>
 				<form onSubmit={handleSubmit}>
-					<div className="form-group">
-						<label htmlFor="name">Name</label>
-						<input
-							id="name"
-							type="text"
-							value={name}
-							onChange={(e) => setName(e.target.value)}
-							required
-							placeholder="Author name"
-						/>
+					<div className="flex flex-col gap-4">
+						<div className="flex flex-col gap-1.5">
+							<Label htmlFor="name">Name</Label>
+							<Input
+								id="name"
+								type="text"
+								value={name}
+								onChange={(e) => setName(e.target.value)}
+								required
+								placeholder="Author name"
+							/>
+						</div>
+						{mutation.isError && (
+							<p className="text-xs text-destructive">
+								Failed to add author. Please try again.
+							</p>
+						)}
 					</div>
-					{mutation.isError && (
-						<p className="error-text">
-							Failed to add author. Please try again.
-						</p>
-					)}
-					<div className="form-actions">
-						<button
-							type="button"
-							className="btn btn-secondary"
-							onClick={onClose}
-						>
+					<DialogFooter>
+						<Button type="button" variant="secondary" onClick={onClose}>
 							Cancel
-						</button>
-						<button
-							type="submit"
-							className="btn btn-primary"
-							disabled={mutation.isPending}
-						>
+						</Button>
+						<Button type="submit" disabled={mutation.isPending}>
 							{mutation.isPending ? "Adding..." : "Add Author"}
-						</button>
-					</div>
+						</Button>
+					</DialogFooter>
 				</form>
-			</div>
-		</div>
+			</DialogContent>
+		</Dialog>
 	);
 }

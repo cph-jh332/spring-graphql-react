@@ -7,6 +7,7 @@ import {
 	Routes,
 	useLocation,
 } from "react-router-dom";
+import { cn } from "@/lib/utils";
 import { useAuthorSubscription } from "./hooks/useAuthorSubscription";
 import { useBookSubscription } from "./hooks/useBookSubscription";
 import { AuthorsPage } from "./pages/AuthorsPage";
@@ -41,46 +42,46 @@ function Layout() {
 	} = useAuthorSubscription();
 
 	return (
-		<div className="app">
-			<header className="app-header">
-				<Link to="/" className="app-logo">
+		<div className="flex flex-col min-h-svh bg-background">
+			<header className="flex items-center justify-between px-8 h-[60px] bg-card border-b border-border sticky top-0 z-50">
+				<Link
+					to="/"
+					className="text-lg font-bold text-foreground tracking-tight no-underline"
+				>
 					Library
 				</Link>
-				<nav className="app-nav">
-					<NavLink
-						to="/"
-						end
-						className={({ isActive }) =>
-							isActive ? "nav-link active" : "nav-link"
-						}
-					>
-						Books
-					</NavLink>
-					<NavLink
-						to="/authors"
-						className={({ isActive }) =>
-							isActive ? "nav-link active" : "nav-link"
-						}
-					>
-						Authors
-					</NavLink>
-					<NavLink
-						to="/graphiql"
-						className={({ isActive }) =>
-							isActive ? "nav-link active" : "nav-link"
-						}
-					>
-						GraphiQL
-					</NavLink>
+				<nav className="flex gap-1">
+					{(
+						[
+							{ to: "/", label: "Books", end: true },
+							{ to: "/authors", label: "Authors", end: false },
+							{ to: "/graphiql", label: "GraphiQL", end: false },
+						] as const
+					).map(({ to, label, end }) => (
+						<NavLink
+							key={to}
+							to={to}
+							end={end}
+							className={({ isActive }) =>
+								cn(
+									"px-3.5 py-1.5 rounded-md text-sm font-medium transition-colors no-underline",
+									isActive
+										? "text-[#818cf8] bg-[rgba(99,102,241,0.15)]"
+										: "text-muted-foreground hover:text-foreground hover:bg-secondary",
+								)
+							}
+						>
+							{label}
+						</NavLink>
+					))}
 				</nav>
 			</header>
 			{isGraphiQL ? (
-				// Full-height, no padding wrapper for GraphiQL
 				<Routes>
 					<Route path="/graphiql" element={<GraphiQLPage />} />
 				</Routes>
 			) : (
-				<main className="app-main">
+				<main className="flex-1 px-8 py-8 max-w-[1200px] w-full mx-auto">
 					<Routes>
 						<Route
 							path="/"

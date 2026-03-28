@@ -1,5 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { gqlClient } from "../api/client";
 import { DELETE_AUTHOR } from "../api/mutations";
 import { GET_AUTHORS } from "../api/queries";
@@ -48,22 +53,18 @@ export function AuthorsPage({
 	});
 
 	return (
-		<div className="page">
-			<div className="page-header">
-				<h1>Authors</h1>
-				<button
-					className="btn btn-primary"
-					type="button"
-					onClick={() => setShowForm(true)}
-				>
+		<div>
+			<div className="flex items-center justify-between mb-6">
+				<h1 className="text-[28px] font-semibold tracking-tight">Authors</h1>
+				<Button type="button" onClick={() => setShowForm(true)}>
 					+ Add Author
-				</button>
+				</Button>
 			</div>
 
-			<div className="search-bar">
-				<input
+			<div className="mb-5">
+				<Input
 					type="search"
-					className="search-input"
+					className="max-w-[480px]"
 					placeholder="Search by author name or book title..."
 					value={searchInput}
 					onChange={(e) => setSearchInput(e.target.value)}
@@ -76,57 +77,67 @@ export function AuthorsPage({
 				clearFeed={clearFeed}
 			/>
 
-			{isLoading && <p className="loading">Loading authors...</p>}
+			{isLoading && (
+				<p className="text-sm text-muted-foreground">Loading authors...</p>
+			)}
 			{isError && (
-				<p className="error-text">
+				<p className="text-sm text-destructive">
 					Failed to load authors:{" "}
 					{error instanceof Error ? error.message : "Unknown error"}
 				</p>
 			)}
 
 			{data && (
-				<div className="author-list">
+				<div className="flex flex-col gap-4">
 					{debouncedQuery && (
-						<p className="search-result-count">
-							{data.authors.length} result{data.authors.length !== 1 ? "s" : ""}{" "}
-							for &ldquo;{debouncedQuery}&rdquo;
+						<p className="text-xs text-muted-foreground">
+							{data.authors.length} result
+							{data.authors.length !== 1 ? "s" : ""} for &ldquo;
+							{debouncedQuery}&rdquo;
 						</p>
 					)}
 					{data.authors.length === 0 && (
-						<p className="empty-state">
+						<p className="text-sm text-muted-foreground py-12 text-center">
 							{debouncedQuery
 								? "No authors match your search."
 								: "No authors found. Add one!"}
 						</p>
 					)}
 					{data.authors.map((author) => (
-						<div key={author.id} className="author-card">
-							<div className="author-card-header">
-								<h2 className="author-name">{author.name}</h2>
-								<button
-									className="btn-delete"
-									type="button"
-									onClick={() => deleteMutation.mutate(author.id)}
-									disabled={deleteMutation.isPending}
-									aria-label={`Delete ${author.name}`}
-								>
-									{deleteMutation.isPending ? "..." : "✕"}
-								</button>
-							</div>
-							<p className="author-book-count">
-								{author.books.length} book{author.books.length !== 1 ? "s" : ""}
-							</p>
+						<Card key={author.id} className="hover:border-primary">
+							<CardHeader className="pb-2">
+								<div className="flex items-center justify-between">
+									<CardTitle className="text-lg">{author.name}</CardTitle>
+									<Button
+										type="button"
+										variant="ghost"
+										size="icon"
+										className="shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 hover:border-destructive border border-transparent"
+										onClick={() => deleteMutation.mutate(author.id)}
+										disabled={deleteMutation.isPending}
+										aria-label={`Delete ${author.name}`}
+									>
+										<X className="h-3 w-3" />
+									</Button>
+								</div>
+								<p className="text-sm text-muted-foreground">
+									{author.books.length} book
+									{author.books.length !== 1 ? "s" : ""}
+								</p>
+							</CardHeader>
 							{author.books.length > 0 && (
-								<ul className="author-books">
-									{author.books.map((book) => (
-										<li key={book.id}>
-											{book.title}{" "}
-											<span className="book-year">({book.year})</span>
-										</li>
-									))}
-								</ul>
+								<CardContent>
+									<ul className="flex flex-col gap-1 text-sm text-foreground pl-0 list-none m-0">
+										{author.books.map((book) => (
+											<li key={book.id} className="flex items-center gap-2">
+												{book.title}
+												<Badge variant="outline">{book.year}</Badge>
+											</li>
+										))}
+									</ul>
+								</CardContent>
 							)}
-						</div>
+						</Card>
 					))}
 				</div>
 			)}

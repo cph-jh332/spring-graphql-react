@@ -10,32 +10,45 @@ interface LiveFeedProps {
 
 export function LiveFeed({ newBooks, error, clearFeed }: LiveFeedProps) {
 	if (error) {
-		return <div className="live-feed live-feed--error">{error}</div>;
+		return (
+			<div className="rounded-md border border-destructive bg-card px-4 py-3 mb-6 text-sm text-destructive">
+				{error}
+			</div>
+		);
 	}
 
 	if (newBooks.length === 0) {
 		return (
-			<div className="live-feed live-feed--idle">
-				<span className="live-indicator" /> Listening for new books...
+			<div className="rounded-md border border-border bg-card px-4 py-3 mb-6 text-sm text-muted-foreground flex items-center gap-2">
+				<span className="inline-block w-2 h-2 rounded-full bg-muted-foreground" />
+				Listening for new books...
 			</div>
 		);
 	}
 
 	return (
-		<div className="live-feed live-feed--active">
-			<div className="live-feed-header">
-				<div>
-					<span className="live-indicator live-indicator--pulse" /> Live Feed
+		<div className="rounded-md border border-primary/40 bg-card px-4 py-3 mb-6 text-sm">
+			<div className="flex items-center justify-between font-semibold text-foreground mb-2.5">
+				<div className="flex items-center gap-2">
+					<span className="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse-dot" />
+					Live Feed
 				</div>
-				<button className="btn-clear" onClick={clearFeed}>
+				<button
+					type="button"
+					className="text-xs text-muted-foreground hover:text-foreground bg-transparent border-none cursor-pointer px-2 py-0.5"
+					onClick={clearFeed}
+				>
 					Clear
 				</button>
 			</div>
-			<ul className="live-feed-list">
+			<ul className="m-0 p-0 list-none flex flex-col gap-1.5">
 				{newBooks.map((book) => (
-					<li key={book.id} className="live-feed-item">
+					<li
+						key={book.id}
+						className="flex items-center justify-between px-2.5 py-1.5 bg-secondary rounded-md animate-slide-in"
+					>
 						<strong>{book.title}</strong>
-						<span className="live-feed-meta">
+						<span className="text-muted-foreground text-xs">
 							{book.author.name} &middot; {book.year}
 						</span>
 					</li>

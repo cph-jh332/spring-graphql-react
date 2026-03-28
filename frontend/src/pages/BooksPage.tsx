@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { gqlClient } from "../api/client";
 import { GET_BOOKS } from "../api/queries";
 import { AddBookForm } from "../components/AddBookForm";
@@ -37,22 +39,18 @@ export function BooksPage({ newBooks, feedError, clearFeed }: BooksPageProps) {
 	});
 
 	return (
-		<div className="page">
-			<div className="page-header">
-				<h1>Books</h1>
-				<button
-					className="btn btn-primary"
-					type="button"
-					onClick={() => setShowForm(true)}
-				>
+		<div>
+			<div className="flex items-center justify-between mb-6">
+				<h1 className="text-[28px] font-semibold tracking-tight">Books</h1>
+				<Button type="button" onClick={() => setShowForm(true)}>
 					+ Add Book
-				</button>
+				</Button>
 			</div>
 
-			<div className="search-bar">
-				<input
+			<div className="mb-5">
+				<Input
 					type="search"
-					className="search-input"
+					className="max-w-[480px]"
 					placeholder="Search by title or author name..."
 					value={searchInput}
 					onChange={(e) => setSearchInput(e.target.value)}
@@ -61,9 +59,11 @@ export function BooksPage({ newBooks, feedError, clearFeed }: BooksPageProps) {
 
 			<LiveFeed newBooks={newBooks} error={feedError} clearFeed={clearFeed} />
 
-			{isLoading && <p className="loading">Loading books...</p>}
+			{isLoading && (
+				<p className="text-sm text-muted-foreground">Loading books...</p>
+			)}
 			{isError && (
-				<p className="error-text">
+				<p className="text-sm text-destructive">
 					Failed to load books:{" "}
 					{error instanceof Error ? error.message : "Unknown error"}
 				</p>
@@ -71,7 +71,7 @@ export function BooksPage({ newBooks, feedError, clearFeed }: BooksPageProps) {
 			{data && (
 				<>
 					{debouncedQuery && (
-						<p className="search-result-count">
+						<p className="text-xs text-muted-foreground mb-4">
 							{data.books.length} result{data.books.length !== 1 ? "s" : ""} for
 							&ldquo;{debouncedQuery}&rdquo;
 						</p>
