@@ -2,14 +2,17 @@ package com.example.library.config;
 
 import com.example.library.document.Author;
 import com.example.library.document.Book;
+import com.example.library.document.User;
 import com.example.library.repository.AuthorRepository;
 import com.example.library.repository.BookRepository;
+import com.example.library.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import net.logstash.logback.marker.Markers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
@@ -23,13 +26,38 @@ public class DataSeeder implements ApplicationRunner {
 
     private final AuthorRepository authorRepository;
     private final BookRepository bookRepository;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public void run(ApplicationArguments args) {
-        seedData().subscribe();
+        seedUsers().thenMany(seedBooks()).subscribe();
     }
 
-    private Flux<Book> seedData() {
+    // ── User seeding ──────────────────────────────────────────────────────────
+
+    private reactor.core.publisher.Mono<Void> seedUsers() {
+        return userRepository.count()
+                .flatMap(count -> {
+                    if (count > 0) {
+                        return reactor.core.publisher.Mono.empty();
+                    }
+                    User admin = User.builder()
+                            .username("admin")
+                            .passwordHash(passwordEncoder.encode("admin123"))
+                            .build();
+                    return userRepository.save(admin)
+                            .doOnSuccess(u -> log.info(
+                                    Markers.append("event", "seed.user.created")
+                                            .and(Markers.append("username", u.getUsername())),
+                                    "startup"))
+                            .then();
+                });
+    }
+
+    // ── Book / author seeding ─────────────────────────────────────────────────
+
+    private Flux<Book> seedBooks() {
         return authorRepository.count()
                 .flatMapMany(count -> {
                     if (count > 0) {

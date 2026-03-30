@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { gqlClient } from "../api/client";
 import { DELETE_BOOK } from "../api/mutations";
+import { useAuth } from "../context/AuthContext";
 import type { GetBooksQuery } from "../gql/graphql";
 
 type Book = GetBooksQuery["books"][number];
@@ -16,6 +17,7 @@ interface BookCardProps {
 
 export function BookCard({ book, onSelect }: BookCardProps) {
 	const queryClient = useQueryClient();
+	const { isAuthenticated } = useAuth();
 
 	const deleteMutation = useMutation({
 		mutationFn: (id: string) => gqlClient.request(DELETE_BOOK, { id }),
@@ -53,20 +55,22 @@ export function BookCard({ book, onSelect }: BookCardProps) {
 					<h3 className="text-base font-semibold text-foreground leading-snug">
 						{book.title}
 					</h3>
-					<Button
-						type="button"
-						variant="ghost"
-						size="icon"
-						className="shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 hover:border-destructive border border-transparent"
-						onClick={(e) => {
-							e.stopPropagation();
-							deleteMutation.mutate(book.id);
-						}}
-						disabled={deleteMutation.isPending}
-						aria-label={`Delete ${book.title}`}
-					>
-						<X className="h-3 w-3" />
-					</Button>
+					{isAuthenticated && (
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon"
+							className="shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 hover:border-destructive border border-transparent"
+							onClick={(e) => {
+								e.stopPropagation();
+								deleteMutation.mutate(book.id);
+							}}
+							disabled={deleteMutation.isPending}
+							aria-label={`Delete ${book.title}`}
+						>
+							<X className="h-3 w-3" />
+						</Button>
+					)}
 				</div>
 				<p className="text-sm text-[#818cf8]">{book.author.name}</p>
 				<Badge variant="outline">{book.year}</Badge>

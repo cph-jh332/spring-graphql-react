@@ -12,6 +12,7 @@ import org.springframework.graphql.data.method.annotation.BatchMapping;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.graphql.data.method.annotation.SubscriptionMapping;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -39,11 +40,13 @@ public class AuthorController {
     }
 
     @MutationMapping
+    @PreAuthorize("isAuthenticated()")
     public Mono<Author> addAuthor(@Argument @Valid AuthorInput input) {
         return authorService.create(input);
     }
 
     @MutationMapping
+    @PreAuthorize("isAuthenticated()")
     public Mono<Boolean> deleteAuthor(@Argument String id) {
         return authorService.delete(id);
     }

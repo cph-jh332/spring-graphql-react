@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { gqlClient } from "../api/client";
 import { DELETE_AUTHOR } from "../api/mutations";
 import { GET_AUTHORS } from "../api/queries";
+import { useAuth } from "../context/AuthContext";
 import { AddAuthorForm } from "../components/AddAuthorForm";
 import { AuthorLiveFeed } from "../components/AuthorLiveFeed";
 import type { OnAuthorAddedSubscription } from "../gql/graphql";
@@ -31,6 +32,7 @@ export function AuthorsPage({
 	const [debouncedQuery, setDebouncedQuery] = useState<string | undefined>(
 		undefined,
 	);
+	const { isAuthenticated } = useAuth();
 
 	useEffect(() => {
 		const timer = setTimeout(() => {
@@ -56,9 +58,11 @@ export function AuthorsPage({
 		<div>
 			<div className="flex items-center justify-between mb-6">
 				<h1 className="text-[28px] font-semibold tracking-tight">Authors</h1>
-				<Button type="button" onClick={() => setShowForm(true)}>
-					+ Add Author
-				</Button>
+				{isAuthenticated && (
+					<Button type="button" onClick={() => setShowForm(true)}>
+						+ Add Author
+					</Button>
+				)}
 			</div>
 
 			<div className="mb-5">
@@ -108,17 +112,19 @@ export function AuthorsPage({
 							<CardHeader className="pb-2">
 								<div className="flex items-center justify-between">
 									<CardTitle className="text-lg">{author.name}</CardTitle>
-									<Button
-										type="button"
-										variant="ghost"
-										size="icon"
-										className="shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 hover:border-destructive border border-transparent"
-										onClick={() => deleteMutation.mutate(author.id)}
-										disabled={deleteMutation.isPending}
-										aria-label={`Delete ${author.name}`}
-									>
-										<X className="h-3 w-3" />
-									</Button>
+									{isAuthenticated && (
+										<Button
+											type="button"
+											variant="ghost"
+											size="icon"
+											className="shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 hover:border-destructive border border-transparent"
+											onClick={() => deleteMutation.mutate(author.id)}
+											disabled={deleteMutation.isPending}
+											aria-label={`Delete ${author.name}`}
+										>
+											<X className="h-3 w-3" />
+										</Button>
+									)}
 								</div>
 								<p className="text-sm text-muted-foreground">
 									{author.books.length} book

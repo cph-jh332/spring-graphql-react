@@ -8,11 +8,13 @@ import {
 	useLocation,
 } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import { useAuthorSubscription } from "./hooks/useAuthorSubscription";
 import { useBookSubscription } from "./hooks/useBookSubscription";
 import { AuthorsPage } from "./pages/AuthorsPage";
 import { BooksPage } from "./pages/BooksPage";
 import { GraphiQLPage } from "./pages/GraphiQLPage";
+import { LoginPage } from "./pages/LoginPage";
 import "./index.css";
 
 const queryClient = new QueryClient({
@@ -27,6 +29,7 @@ const queryClient = new QueryClient({
 function Layout() {
 	const { pathname } = useLocation();
 	const isGraphiQL = pathname === "/graphiql";
+	const { user, isAuthenticated, logout } = useAuth();
 
 	// Both subscriptions are kept alive at the app root so cache invalidations
 	// fire regardless of which page is currently mounted.
@@ -50,7 +53,7 @@ function Layout() {
 				>
 					Library
 				</Link>
-				<nav className="flex gap-1">
+				<nav className="flex items-center gap-1">
 					{(
 						[
 							{ to: "/", label: "Books", end: true },
@@ -74,6 +77,38 @@ function Layout() {
 							{label}
 						</NavLink>
 					))}
+
+					{/* Auth section */}
+					<div className="ml-3 flex items-center gap-2 pl-3 border-l border-border">
+						{isAuthenticated ? (
+							<>
+								<span className="text-xs text-muted-foreground hidden sm:block">
+									{user?.username}
+								</span>
+								<button
+									type="button"
+									onClick={() => logout()}
+									className="px-3.5 py-1.5 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+								>
+									Log out
+								</button>
+							</>
+						) : (
+							<NavLink
+								to="/login"
+								className={({ isActive }) =>
+									cn(
+										"px-3.5 py-1.5 rounded-md text-sm font-medium transition-colors no-underline",
+										isActive
+											? "text-[#818cf8] bg-[rgba(99,102,241,0.15)]"
+											: "text-muted-foreground hover:text-foreground hover:bg-secondary",
+									)
+								}
+							>
+								Log in
+							</NavLink>
+						)}
+					</div>
 				</nav>
 			</header>
 			{isGraphiQL ? (
@@ -103,6 +138,7 @@ function Layout() {
 								/>
 							}
 						/>
+						<Route path="/login" element={<LoginPage />} />
 					</Routes>
 				</main>
 			)}
@@ -114,7 +150,9 @@ function App() {
 	return (
 		<QueryClientProvider client={queryClient}>
 			<BrowserRouter>
-				<Layout />
+				<AuthProvider>
+					<Layout />
+				</AuthProvider>
 			</BrowserRouter>
 		</QueryClientProvider>
 	);

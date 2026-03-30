@@ -27,6 +27,11 @@ server:
 app:
   upload:
     dir: uploads/books
+  jwt:
+    # Base64-encoded HS256 key (32 bytes).
+    # CHANGE THIS in any non-development environment.
+    secret: bGlicmFyeS1hcHAtc2VjcmV0LWtleS0zMmJ5dGVzISE=
+    expiration-ms: 86400000   # 24 hours
 
 # Log levels are configured in logback-spring.xml (wide-event structured logging).
 # Set the active Spring profile to "dev" to enable DEBUG for com.example.

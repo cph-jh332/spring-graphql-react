@@ -7,6 +7,9 @@ const GRAPHQL_ENDPOINT =
   `${window.location.protocol}//${window.location.host}/graphql`;
 
 export const gqlClient = new GraphQLClient(GRAPHQL_ENDPOINT, {
+  // Send the HttpOnly access_token cookie with every request so that
+  // @PreAuthorize-protected mutations are authenticated.
+  credentials: "include",
   headers: {
     "Content-Type": "application/json",
   },
