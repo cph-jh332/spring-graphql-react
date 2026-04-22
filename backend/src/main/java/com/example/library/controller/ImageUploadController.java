@@ -21,10 +21,8 @@ import java.util.Set;
 @RequestMapping("/api/books")
 public class ImageUploadController {
 
-    private static final long MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
     private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
-            "image/jpeg", "image/png", "image/webp"
-    );
+            "image/jpeg", "image/png", "image/webp");
 
     private final BookService bookService;
     private final Path uploadDir;
@@ -63,7 +61,8 @@ public class ImageUploadController {
         String filename = id + ext;
         Path dest = uploadDir.resolve(filename);
 
-        // Delete any previous cover (different extension) before writing; collect warnings.
+        // Delete any previous cover (different extension) before writing; collect
+        // warnings.
         List<String> deleteWarnings = deleteExistingCovers(id);
 
         return filePart.transferTo(dest)
@@ -73,8 +72,7 @@ public class ImageUploadController {
                     // Surface any file-deletion warnings into the wide event
                     if (!deleteWarnings.isEmpty() && ctx.hasKey(WideEventFilter.WIDE_EVENT_KEY)) {
                         @SuppressWarnings("unchecked")
-                        Map<String, String> fields =
-                                (Map<String, String>) ctx.get(WideEventFilter.WIDE_EVENT_KEY);
+                        Map<String, String> fields = (Map<String, String>) ctx.get(WideEventFilter.WIDE_EVENT_KEY);
                         fields.put("warning", String.join("; ", deleteWarnings));
                     }
                     return Mono.just(result);
@@ -94,8 +92,7 @@ public class ImageUploadController {
                 .flatMap(result -> Mono.deferContextual(ctx -> {
                     if (!deleteWarnings.isEmpty() && ctx.hasKey(WideEventFilter.WIDE_EVENT_KEY)) {
                         @SuppressWarnings("unchecked")
-                        Map<String, String> fields =
-                                (Map<String, String>) ctx.get(WideEventFilter.WIDE_EVENT_KEY);
+                        Map<String, String> fields = (Map<String, String>) ctx.get(WideEventFilter.WIDE_EVENT_KEY);
                         fields.put("warning", String.join("; ", deleteWarnings));
                     }
                     return Mono.just(result);
@@ -113,13 +110,15 @@ public class ImageUploadController {
     }
 
     /**
-     * Deletes any existing cover files for the given book id across all supported extensions.
+     * Deletes any existing cover files for the given book id across all supported
+     * extensions.
      *
-     * @return list of warning messages for files that could not be deleted (empty on success)
+     * @return list of warning messages for files that could not be deleted (empty
+     *         on success)
      */
     private List<String> deleteExistingCovers(String id) {
         List<String> warnings = new ArrayList<>();
-        for (String ext : new String[]{".jpg", ".png", ".webp"}) {
+        for (String ext : new String[] { ".jpg", ".png", ".webp" }) {
             Path p = uploadDir.resolve(id + ext);
             try {
                 Files.deleteIfExists(p);

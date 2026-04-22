@@ -9,7 +9,6 @@ import graphql.language.NullValue;
 import graphql.language.ObjectField;
 import graphql.language.ObjectValue;
 import graphql.language.OperationDefinition;
-import graphql.language.Selection;
 import graphql.language.StringValue;
 import graphql.language.Value;
 import graphql.language.VariableReference;
@@ -20,30 +19,33 @@ import org.springframework.graphql.server.WebGraphQlResponse;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
 import java.util.Map;
 
 /**
  * Wide-event GraphQL interceptor.
  *
- * <p>Enriches the Reactor Context's wide-event field map (keyed by
+ * <p>
+ * Enriches the Reactor Context's wide-event field map (keyed by
  * {@link WideEventFilter#WIDE_EVENT_KEY}) with GraphQL-specific context so that
- * the outer {@link WideEventFilter} can include those fields in the single emitted
+ * the outer {@link WideEventFilter} can include those fields in the single
+ * emitted
  * log line.
  *
- * <p>Fields added:
+ * <p>
+ * Fields added:
  * <ul>
- *   <li>{@code graphql.operation} – {@code query}, {@code mutation}, or
- *       {@code subscription}</li>
- *   <li>{@code graphql.field} – the first root-level field name (e.g.
- *       {@code books}, {@code addBook})</li>
- *   <li>{@code graphql.args.*} – flattened arguments from the root field, resolved
- *       against the variables map. E.g. {@code graphql.args.query},
- *       {@code graphql.args.input.title}, {@code graphql.args.id}.</li>
- *   <li>{@code graphql.error_count} – number of GraphQL errors in the response
- *       (omitted when zero)</li>
- *   <li>{@code error.message} / {@code error.type} – first error detail when
- *       errors are present</li>
+ * <li>{@code graphql.operation} – {@code query}, {@code mutation}, or
+ * {@code subscription}</li>
+ * <li>{@code graphql.field} – the first root-level field name (e.g.
+ * {@code books}, {@code addBook})</li>
+ * <li>{@code graphql.args.*} – flattened arguments from the root field,
+ * resolved
+ * against the variables map. E.g. {@code graphql.args.query},
+ * {@code graphql.args.input.title}, {@code graphql.args.id}.</li>
+ * <li>{@code graphql.error_count} – number of GraphQL errors in the response
+ * (omitted when zero)</li>
+ * <li>{@code error.message} / {@code error.type} – first error detail when
+ * errors are present</li>
  * </ul>
  */
 @Component
@@ -58,8 +60,7 @@ public class GraphQlWideEventInterceptor implements WebGraphQlInterceptor {
                     }
 
                     @SuppressWarnings("unchecked")
-                    Map<String, String> fields =
-                            (Map<String, String>) ctx.get(WideEventFilter.WIDE_EVENT_KEY);
+                    Map<String, String> fields = (Map<String, String>) ctx.get(WideEventFilter.WIDE_EVENT_KEY);
 
                     // Parse the raw document string to extract operation type, root field, and args
                     try {
@@ -77,8 +78,7 @@ public class GraphQlWideEventInterceptor implements WebGraphQlInterceptor {
                                         fields.put("graphql.operation",
                                                 opType != null ? opType.name().toLowerCase() : "query");
 
-                                        List<Selection> selections =
-                                                op.getSelectionSet().getSelections();
+                                        var selections = op.getSelectionSet().getSelections();
                                         if (!selections.isEmpty()
                                                 && selections.get(0) instanceof Field rootField) {
                                             fields.put("graphql.field", rootField.getName());
@@ -115,9 +115,12 @@ public class GraphQlWideEventInterceptor implements WebGraphQlInterceptor {
 
     /**
      * Recursively flattens a GraphQL AST {@link Value} into the fields map using
-     * dot-separated keys. Variable references are resolved against the variables map.
+     * dot-separated keys. Variable references are resolved against the variables
+     * map.
      *
-     * <p>Examples:
+     * <p>
+     * Examples:
+     * 
      * <pre>
      *   query=hello           → graphql.args.query = "hello"
      *   id=42                 → graphql.args.id = "42"
@@ -128,7 +131,7 @@ public class GraphQlWideEventInterceptor implements WebGraphQlInterceptor {
      */
     @SuppressWarnings("unchecked")
     private void flattenValue(String key, Value<?> value, Map<String, Object> variables,
-                              Map<String, String> out) {
+            Map<String, String> out) {
         if (value instanceof StringValue sv) {
             out.put(key, sv.getValue());
         } else if (value instanceof IntValue iv) {
@@ -156,7 +159,10 @@ public class GraphQlWideEventInterceptor implements WebGraphQlInterceptor {
         // EnumValue, ListValue, etc. — omitted; not used by this schema
     }
 
-    /** Recursively flattens a plain {@link Map} (from the variables map) into dot-keys. */
+    /**
+     * Recursively flattens a plain {@link Map} (from the variables map) into
+     * dot-keys.
+     */
     @SuppressWarnings("unchecked")
     private void flattenMap(String prefix, Map<String, Object> map, Map<String, String> out) {
         for (Map.Entry<String, Object> entry : map.entrySet()) {
