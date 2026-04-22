@@ -1,5 +1,12 @@
 package com.example.library.filter;
 
+import java.util.Map;
+
+import org.springframework.graphql.server.WebGraphQlInterceptor;
+import org.springframework.graphql.server.WebGraphQlRequest;
+import org.springframework.graphql.server.WebGraphQlResponse;
+import org.springframework.stereotype.Component;
+
 import graphql.language.Argument;
 import graphql.language.BooleanValue;
 import graphql.language.Field;
@@ -13,13 +20,7 @@ import graphql.language.StringValue;
 import graphql.language.Value;
 import graphql.language.VariableReference;
 import graphql.parser.Parser;
-import org.springframework.graphql.server.WebGraphQlInterceptor;
-import org.springframework.graphql.server.WebGraphQlRequest;
-import org.springframework.graphql.server.WebGraphQlResponse;
-import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
-
-import java.util.Map;
 
 /**
  * Wide-event GraphQL interceptor.

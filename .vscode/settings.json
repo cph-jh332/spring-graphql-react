@@ -1,4 +1,11 @@
 {
 	"java.compile.nullAnalysis.mode": "disabled",
-	"java.configuration.updateBuildConfiguration": "interactive"
+	"java.configuration.updateBuildConfiguration": "interactive",
+	"[java]": {
+		"editor.formatOnSave": true,
+		"editor.formatOnSaveMode": "file",
+		"editor.codeActionsOnSave": {
+			"source.organizeImports": "explicit"
+		}
+	}
 }
