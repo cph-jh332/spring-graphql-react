@@ -11,8 +11,10 @@ import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.BatchMapping;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
+import org.springframework.graphql.data.method.annotation.SchemaMapping;
 import org.springframework.graphql.data.method.annotation.SubscriptionMapping;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -40,15 +42,39 @@ public class BookController {
     }
 
     @MutationMapping
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('LIBRARIAN')")
     public Mono<Book> addBook(@Argument @Valid BookInput input) {
         return bookService.create(input);
     }
 
     @MutationMapping
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('LIBRARIAN')")
+    public Mono<Book> updateBook(@Argument String id, @Argument @Valid BookInput input) {
+        return bookService.update(id, input);
+    }
+
+    @MutationMapping
+    @PreAuthorize("hasRole('LIBRARIAN')")
     public Mono<Boolean> deleteBook(@Argument String id) {
         return bookService.delete(id);
+    }
+
+    @MutationMapping
+    @PreAuthorize("isAuthenticated()")
+    public Mono<Book> borrowBook(@Argument String bookId, Authentication authentication) {
+        return bookService.borrow(bookId, authentication.getName());
+    }
+
+    @MutationMapping
+    @PreAuthorize("isAuthenticated()")
+    public Mono<Book> returnBook(@Argument String bookId, Authentication authentication) {
+        return bookService.returnBook(bookId, authentication.getName());
+    }
+
+    /** Computed field: availableCount = totalCopies - borrowedCount. */
+    @SchemaMapping(typeName = "Book", field = "availableCount")
+    public int availableCount(Book book) {
+        return bookService.availableCount(book);
     }
 
     /**

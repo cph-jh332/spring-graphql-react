@@ -13,8 +13,11 @@ import { useAuthorSubscription } from "./hooks/useAuthorSubscription";
 import { useBookSubscription } from "./hooks/useBookSubscription";
 import { AuthorsPage } from "./pages/AuthorsPage";
 import { BooksPage } from "./pages/BooksPage";
+import { BorrowedBooksPage } from "./pages/BorrowedBooksPage";
 import { GraphiQLPage } from "./pages/GraphiQLPage";
 import { LoginPage } from "./pages/LoginPage";
+import { UsersPage } from "./pages/UsersPage";
+import { Role } from "./gql/graphql";
 import "./index.css";
 
 const queryClient = new QueryClient({
@@ -30,6 +33,7 @@ function Layout() {
 	const { pathname } = useLocation();
 	const isGraphiQL = pathname === "/graphiql";
 	const { user, isAuthenticated, logout } = useAuth();
+	const isLibrarian = user?.roles.includes(Role.Librarian);
 
 	// Both subscriptions are kept alive at the app root so cache invalidations
 	// fire regardless of which page is currently mounted.
@@ -77,6 +81,40 @@ function Layout() {
 							{label}
 						</NavLink>
 					))}
+
+				{/* Users link — librarians only */}
+				{isLibrarian && (
+					<NavLink
+						to="/users"
+						className={({ isActive }) =>
+							cn(
+								"px-3.5 py-1.5 rounded-md text-sm font-medium transition-colors no-underline",
+								isActive
+									? "text-[#818cf8] bg-[rgba(99,102,241,0.15)]"
+									: "text-muted-foreground hover:text-foreground hover:bg-secondary",
+							)
+						}
+					>
+						Users
+					</NavLink>
+				)}
+
+				{/* My Books link — authenticated users only */}
+				{isAuthenticated && (
+					<NavLink
+						to="/borrowed"
+						className={({ isActive }) =>
+							cn(
+								"px-3.5 py-1.5 rounded-md text-sm font-medium transition-colors no-underline",
+								isActive
+									? "text-[#818cf8] bg-[rgba(99,102,241,0.15)]"
+									: "text-muted-foreground hover:text-foreground hover:bg-secondary",
+							)
+						}
+					>
+						My Books
+					</NavLink>
+				)}
 
 					{/* Auth section */}
 					<div className="ml-3 flex items-center gap-2 pl-3 border-l border-border">
@@ -139,6 +177,8 @@ function Layout() {
 							}
 						/>
 						<Route path="/login" element={<LoginPage />} />
+						<Route path="/users" element={<UsersPage />} />
+						<Route path="/borrowed" element={<BorrowedBooksPage />} />
 					</Routes>
 				</main>
 			)}

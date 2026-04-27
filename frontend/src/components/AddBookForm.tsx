@@ -21,6 +21,7 @@ import {
 import { gqlClient } from "../api/client";
 import { ADD_BOOK } from "../api/mutations";
 import { GET_AUTHORS } from "../api/queries";
+import { queryKeys } from "../api/queryKeys";
 import { uploadBookCover, validateImageFile } from "../api/uploadApi";
 import { useQuery } from "@tanstack/react-query";
 
@@ -33,6 +34,7 @@ export function AddBookForm({ onClose }: AddBookFormProps) {
 	const [title, setTitle] = useState("");
 	const [year, setYear] = useState(new Date().getFullYear());
 	const [authorId, setAuthorId] = useState("");
+	const [totalCopies, setTotalCopies] = useState(1);
 	const [coverFile, setCoverFile] = useState<File | null>(null);
 	const [coverPreview, setCoverPreview] = useState<string | null>(null);
 	const [fileError, setFileError] = useState<string | null>(null);
@@ -40,12 +42,12 @@ export function AddBookForm({ onClose }: AddBookFormProps) {
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	const { data: authorsData } = useQuery({
-		queryKey: ["authors"],
+		queryKey: queryKeys.authors.all,
 		queryFn: () => gqlClient.request(GET_AUTHORS, {}),
 	});
 
 	const mutation = useMutation({
-		mutationFn: (input: { title: string; year: number; authorId: string }) =>
+		mutationFn: (input: { title: string; year: number; authorId: string; totalCopies: number }) =>
 			gqlClient.request(ADD_BOOK, { input }),
 		onSuccess: async ({ addBook }) => {
 			if (coverFile) {
@@ -58,8 +60,8 @@ export function AddBookForm({ onClose }: AddBookFormProps) {
 					setUploading(false);
 				}
 			}
-			queryClient.invalidateQueries({ queryKey: ["books"] });
-			queryClient.invalidateQueries({ queryKey: ["authors"] });
+			queryClient.invalidateQueries({ queryKey: queryKeys.books.all });
+			queryClient.invalidateQueries({ queryKey: queryKeys.authors.all });
 			onClose();
 		},
 	});
@@ -94,7 +96,7 @@ export function AddBookForm({ onClose }: AddBookFormProps) {
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!authorId) return;
-		mutation.mutate({ title, year, authorId });
+		mutation.mutate({ title, year, authorId, totalCopies });
 	};
 
 	const isPending = mutation.isPending || uploading;
@@ -126,6 +128,18 @@ export function AddBookForm({ onClose }: AddBookFormProps) {
 								type="number"
 								value={year}
 								onChange={(e) => setYear(Number(e.target.value))}
+								required
+								min={1}
+							/>
+						</div>
+
+						<div className="flex flex-col gap-1.5">
+							<Label htmlFor="totalCopies">Number of Copies</Label>
+							<Input
+								id="totalCopies"
+								type="number"
+								value={totalCopies}
+								onChange={(e) => setTotalCopies(Number(e.target.value))}
 								required
 								min={1}
 							/>

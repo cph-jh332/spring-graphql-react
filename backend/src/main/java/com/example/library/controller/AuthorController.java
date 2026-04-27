@@ -40,13 +40,13 @@ public class AuthorController {
     }
 
     @MutationMapping
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('LIBRARIAN')")
     public Mono<Author> addAuthor(@Argument @Valid AuthorInput input) {
         return authorService.create(input);
     }
 
     @MutationMapping
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('LIBRARIAN')")
     public Mono<Boolean> deleteAuthor(@Argument String id) {
         return authorService.delete(id);
     }

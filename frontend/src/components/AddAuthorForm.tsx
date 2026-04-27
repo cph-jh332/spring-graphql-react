@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { gqlClient } from "../api/client";
 import { ADD_AUTHOR } from "../api/mutations";
+import { queryKeys } from "../api/queryKeys";
 
 interface AddAuthorFormProps {
 	onClose: () => void;
@@ -25,7 +26,7 @@ export function AddAuthorForm({ onClose }: AddAuthorFormProps) {
 		mutationFn: (input: { name: string }) =>
 			gqlClient.request(ADD_AUTHOR, { input }),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["authors"] });
+			queryClient.invalidateQueries({ queryKey: queryKeys.authors.all });
 			onClose();
 		},
 	});

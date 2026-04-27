@@ -8,6 +8,9 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Document(collection = "users")
 @Data
 @Builder
@@ -22,4 +25,11 @@ public class User {
     private String username;
 
     private String passwordHash;
+
+    @Builder.Default
+    private List<Role> roles = List.of(Role.MEMBER);
+
+    /** Books currently borrowed by this user, with their borrow timestamps. */
+    @Builder.Default
+    private List<BorrowRecord> borrowedRecords = new ArrayList<>();
 }

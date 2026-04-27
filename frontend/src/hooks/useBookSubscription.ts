@@ -2,6 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { print } from "graphql";
 import { useEffect, useState } from "react";
 import { BOOK_ADDED_SUBSCRIPTION, BOOK_DELETED_SUBSCRIPTION } from "../api/queries";
+import { queryKeys } from "../api/queryKeys";
 import { wsClient } from "../api/wsClient";
 import type { OnBookAddedSubscription, OnBookDeletedSubscription } from "../gql/graphql";
 
@@ -17,8 +18,8 @@ export function useBookSubscription() {
         next: ({ data }) => {
           if (data?.bookAdded) {
             setNewBooks((prev) => [data.bookAdded, ...prev].slice(0, 20));
-            queryClient.invalidateQueries({ queryKey: ["books"] });
-            queryClient.invalidateQueries({ queryKey: ["authors"] });
+            queryClient.invalidateQueries({ queryKey: queryKeys.books.all });
+            queryClient.invalidateQueries({ queryKey: queryKeys.authors.all });
           }
         },
         error: (err) => {
@@ -34,8 +35,8 @@ export function useBookSubscription() {
       {
         next: ({ data }) => {
           if (data?.bookDeleted) {
-            queryClient.invalidateQueries({ queryKey: ["books"] });
-            queryClient.invalidateQueries({ queryKey: ["authors"] });
+            queryClient.invalidateQueries({ queryKey: queryKeys.books.all });
+            queryClient.invalidateQueries({ queryKey: queryKeys.authors.all });
           }
         },
         error: (err) => console.error("bookDeleted subscription error:", err),

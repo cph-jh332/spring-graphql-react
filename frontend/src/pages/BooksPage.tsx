@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { gqlClient } from "../api/client";
 import { GET_BOOKS } from "../api/queries";
+import { queryKeys } from "../api/queryKeys";
 import { useAuth } from "../context/AuthContext";
+import { Role } from "../gql/graphql";
 import { AddBookForm } from "../components/AddBookForm";
 import { BookDetailModal } from "../components/BookDetailModal";
 import { BookList } from "../components/BookList";
@@ -26,7 +28,8 @@ export function BooksPage({ newBooks, feedError, clearFeed }: BooksPageProps) {
 		undefined,
 	);
 	const [selectedBook, setSelectedBook] = useState<Book | null>(null);
-	const { isAuthenticated } = useAuth();
+	const { isAuthenticated, user } = useAuth();
+	const isLibrarian = user?.roles.includes(Role.Librarian);
 
 	useEffect(() => {
 		const timer = setTimeout(() => {
@@ -36,7 +39,7 @@ export function BooksPage({ newBooks, feedError, clearFeed }: BooksPageProps) {
 	}, [searchInput]);
 
 	const { data, isLoading, isError, error } = useQuery({
-		queryKey: ["books", debouncedQuery],
+		queryKey: queryKeys.books.list(debouncedQuery),
 		queryFn: () => gqlClient.request(GET_BOOKS, { query: debouncedQuery }),
 	});
 
@@ -44,7 +47,7 @@ export function BooksPage({ newBooks, feedError, clearFeed }: BooksPageProps) {
 		<div>
 			<div className="flex items-center justify-between mb-6">
 				<h1 className="text-[28px] font-semibold tracking-tight">Books</h1>
-				{isAuthenticated && (
+				{isAuthenticated && isLibrarian && (
 					<Button type="button" onClick={() => setShowForm(true)}>
 						+ Add Book
 					</Button>

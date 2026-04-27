@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { gqlClient } from "../api/client";
 import { DELETE_BOOK } from "../api/mutations";
+import { queryKeys } from "../api/queryKeys";
 import { useAuth } from "../context/AuthContext";
+import { Role } from "../gql/graphql";
 import type { GetBooksQuery } from "../gql/graphql";
 
 type Book = GetBooksQuery["books"][number];
@@ -17,13 +19,14 @@ interface BookCardProps {
 
 export function BookCard({ book, onSelect }: BookCardProps) {
 	const queryClient = useQueryClient();
-	const { isAuthenticated } = useAuth();
+	const { isAuthenticated, user } = useAuth();
+	const isLibrarian = user?.roles.includes(Role.Librarian);
 
 	const deleteMutation = useMutation({
 		mutationFn: (id: string) => gqlClient.request(DELETE_BOOK, { id }),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["books"] });
-			queryClient.invalidateQueries({ queryKey: ["authors"] });
+			queryClient.invalidateQueries({ queryKey: queryKeys.books.all });
+			queryClient.invalidateQueries({ queryKey: queryKeys.authors.all });
 		},
 	});
 
@@ -55,7 +58,7 @@ export function BookCard({ book, onSelect }: BookCardProps) {
 					<h3 className="text-base font-semibold text-foreground leading-snug">
 						{book.title}
 					</h3>
-					{isAuthenticated && (
+					{isAuthenticated && isLibrarian && (
 						<Button
 							type="button"
 							variant="ghost"
@@ -73,7 +76,15 @@ export function BookCard({ book, onSelect }: BookCardProps) {
 					)}
 				</div>
 				<p className="text-sm text-[#818cf8]">{book.author.name}</p>
-				<Badge variant="outline">{book.year}</Badge>
+				<div className="flex items-center gap-1.5 flex-wrap">
+					<Badge variant="outline">{book.year}</Badge>
+					<Badge
+						variant="outline"
+						className={book.availableCount > 0 ? "text-green-400 border-green-400/40" : "text-destructive border-destructive/40"}
+					>
+						{book.availableCount}/{book.totalCopies}
+					</Badge>
+				</div>
 			</CardContent>
 		</Card>
 	);

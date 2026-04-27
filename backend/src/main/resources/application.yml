@@ -12,6 +12,9 @@ spring:
       path: /graphql
     graphiql:
       enabled: false   # served by the React frontend at /graphiql instead
+    schema:
+      introspection:
+        enabled: true
 
   # Enable multipart file uploads (Spring WebFlux)
   webflux:

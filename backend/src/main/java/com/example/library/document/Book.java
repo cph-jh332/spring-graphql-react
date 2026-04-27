@@ -25,4 +25,10 @@ public class Book {
 
     /** Relative URL path to the uploaded cover image, e.g. /uploads/books/abc123.jpg */
     private String coverImage;
+
+    /** Total number of physical copies owned by the library. */
+    private int totalCopies;
+
+    /** Number of copies currently borrowed (not yet returned). */
+    private int borrowedCount;
 }

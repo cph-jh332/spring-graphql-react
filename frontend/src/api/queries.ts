@@ -7,4 +7,6 @@ export {
   OnBookDeletedDocument as BOOK_DELETED_SUBSCRIPTION,
   OnAuthorAddedDocument as AUTHOR_ADDED_SUBSCRIPTION,
   OnAuthorDeletedDocument as AUTHOR_DELETED_SUBSCRIPTION,
+  MeDocument as ME,
+  UsersDocument as GET_USERS,
 } from "../gql/graphql";

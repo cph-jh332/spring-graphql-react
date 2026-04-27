@@ -2,6 +2,7 @@ package com.example.library.config;
 
 import com.example.library.document.Author;
 import com.example.library.document.Book;
+import com.example.library.document.Role;
 import com.example.library.document.User;
 import com.example.library.repository.AuthorRepository;
 import com.example.library.repository.BookRepository;
@@ -45,6 +46,7 @@ public class DataSeeder implements ApplicationRunner {
                     User admin = User.builder()
                             .username("admin")
                             .passwordHash(passwordEncoder.encode("admin123"))
+                            .roles(List.of(Role.LIBRARIAN))
                             .build();
                     return userRepository.save(admin)
                             .doOnSuccess(u -> log.info(

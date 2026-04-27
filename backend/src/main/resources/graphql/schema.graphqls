@@ -3,13 +3,24 @@ type Query {
     book(id: ID!): Book
     authors(query: String): [Author!]!
     author(id: ID!): Author
+    me: AuthPayload
+    users: [User!]!
 }
 
 type Mutation {
     addAuthor(input: AuthorInput!): Author!
     addBook(input: BookInput!): Book!
+    updateBook(id: ID!, input: BookInput!): Book!
     deleteBook(id: ID!): Boolean!
     deleteAuthor(id: ID!): Boolean!
+    login(input: LoginInput!): AuthPayload!
+    logout: Boolean!
+    register(input: RegisterInput!): AuthPayload!
+    deleteUser(username: String!): Boolean!
+    updateUser(input: UpdateUserInput!): User!
+    createUser(input: RegisterInput!): User!
+    borrowBook(bookId: ID!): Book!
+    returnBook(bookId: ID!): Book!
 }
 
 type Subscription {
@@ -19,12 +30,57 @@ type Subscription {
     authorDeleted: ID!
 }
 
+# ── Auth ──────────────────────────────────────────────────────────────────────
+
+enum Role {
+    MEMBER
+    LIBRARIAN
+}
+
+type AuthPayload {
+    username: String!
+    roles: [Role!]!
+    borrowedRecords: [BorrowRecord!]!
+}
+
+input LoginInput {
+    username: String!
+    password: String!
+}
+
+input RegisterInput {
+    username: String!
+    password: String!
+    role: Role
+}
+
+input UpdateUserInput {
+    username: String!
+    role: Role
+    newPassword: String
+}
+
+type User {
+    username: String!
+    roles: [Role!]!
+    borrowedRecords: [BorrowRecord!]!
+}
+
+type BorrowRecord {
+    bookId: ID!
+    borrowedAt: String!
+}
+
+# ── Library ───────────────────────────────────────────────────────────────────
+
 type Book {
     id: ID!
     title: String!
     year: Int!
     author: Author!
     coverImage: String
+    totalCopies: Int!
+    availableCount: Int!
 }
 
 type Author {
@@ -37,6 +93,7 @@ input BookInput {
     title: String!
     year: Int!
     authorId: ID!
+    totalCopies: Int!
 }
 
 input AuthorInput {

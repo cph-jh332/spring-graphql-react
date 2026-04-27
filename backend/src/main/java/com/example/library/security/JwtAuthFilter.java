@@ -3,7 +3,7 @@ package com.example.library.security;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpCookie;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
@@ -15,9 +15,9 @@ import java.util.List;
 
 /**
  * Reads the {@code access_token} HttpOnly cookie from every incoming request.
- * If the token is present and valid, the authenticated principal is stored in
- * the reactive security context so that {@code @PreAuthorize} annotations on
- * GraphQL mutation handlers are evaluated correctly.
+ * If the token is present and valid, the authenticated principal — including
+ * the roles embedded in the JWT — is stored in the reactive security context
+ * so that {@code @PreAuthorize} annotations on GraphQL handlers are evaluated.
  */
 @Component
 @RequiredArgsConstructor
@@ -38,11 +38,8 @@ public class JwtAuthFilter implements WebFilter {
         try {
             if (jwtUtil.isTokenValid(token)) {
                 String username = jwtUtil.extractUsername(token);
-                var auth = new UsernamePasswordAuthenticationToken(
-                        username,
-                        null,
-                        List.of(new SimpleGrantedAuthority("ROLE_USER"))
-                );
+                List<GrantedAuthority> authorities = jwtUtil.extractAuthorities(token);
+                var auth = new UsernamePasswordAuthenticationToken(username, null, authorities);
                 return chain.filter(exchange)
                         .contextWrite(ReactiveSecurityContextHolder.withAuthentication(auth));
             }

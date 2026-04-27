@@ -4,6 +4,8 @@ query GetBooks($query: String) {
     title
     year
     coverImage
+    totalCopies
+    availableCount
     author {
       id
       name
@@ -17,6 +19,8 @@ query GetBook($id: ID!) {
     title
     year
     coverImage
+    totalCopies
+    availableCount
     author {
       id
       name
@@ -30,6 +34,8 @@ subscription OnBookAdded {
     title
     year
     coverImage
+    totalCopies
+    availableCount
     author {
       id
       name
@@ -40,3 +46,4 @@ subscription OnBookAdded {
 subscription OnBookDeleted {
   bookDeleted
 }
+

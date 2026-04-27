@@ -8,7 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { gqlClient } from "../api/client";
 import { DELETE_AUTHOR } from "../api/mutations";
 import { GET_AUTHORS } from "../api/queries";
+import { queryKeys } from "../api/queryKeys";
 import { useAuth } from "../context/AuthContext";
+import { Role } from "../gql/graphql";
 import { AddAuthorForm } from "../components/AddAuthorForm";
 import { AuthorLiveFeed } from "../components/AuthorLiveFeed";
 import type { OnAuthorAddedSubscription } from "../gql/graphql";
@@ -32,7 +34,8 @@ export function AuthorsPage({
 	const [debouncedQuery, setDebouncedQuery] = useState<string | undefined>(
 		undefined,
 	);
-	const { isAuthenticated } = useAuth();
+	const { isAuthenticated, user } = useAuth();
+	const isLibrarian = user?.roles.includes(Role.Librarian);
 
 	useEffect(() => {
 		const timer = setTimeout(() => {
@@ -42,15 +45,15 @@ export function AuthorsPage({
 	}, [searchInput]);
 
 	const { data, isLoading, isError, error } = useQuery({
-		queryKey: ["authors", debouncedQuery],
+		queryKey: queryKeys.authors.list(debouncedQuery),
 		queryFn: () => gqlClient.request(GET_AUTHORS, { query: debouncedQuery }),
 	});
 
 	const deleteMutation = useMutation({
 		mutationFn: (id: string) => gqlClient.request(DELETE_AUTHOR, { id }),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["authors"] });
-			queryClient.invalidateQueries({ queryKey: ["books"] });
+			queryClient.invalidateQueries({ queryKey: queryKeys.authors.all });
+			queryClient.invalidateQueries({ queryKey: queryKeys.books.all });
 		},
 	});
 
@@ -58,7 +61,7 @@ export function AuthorsPage({
 		<div>
 			<div className="flex items-center justify-between mb-6">
 				<h1 className="text-[28px] font-semibold tracking-tight">Authors</h1>
-				{isAuthenticated && (
+				{isAuthenticated && isLibrarian && (
 					<Button type="button" onClick={() => setShowForm(true)}>
 						+ Add Author
 					</Button>
@@ -112,7 +115,7 @@ export function AuthorsPage({
 							<CardHeader className="pb-2">
 								<div className="flex items-center justify-between">
 									<CardTitle className="text-lg">{author.name}</CardTitle>
-									{isAuthenticated && (
+									{isAuthenticated && isLibrarian && (
 										<Button
 											type="button"
 											variant="ghost"

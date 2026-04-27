@@ -1,14 +1,19 @@
 package com.example.library.service;
 
 import com.example.library.document.Book;
+import com.example.library.document.BorrowRecord;
+import com.example.library.document.User;
 import com.example.library.dto.BookInput;
 import com.example.library.repository.AuthorRepository;
 import com.example.library.repository.BookRepository;
+import com.example.library.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -20,6 +25,7 @@ public class BookService {
 
     private final BookRepository bookRepository;
     private final AuthorRepository authorRepository;
+    private final UserRepository userRepository;
 
     /**
      * Hot sink that broadcasts newly created books to all active GraphQL subscriptions.
@@ -34,9 +40,10 @@ public class BookService {
     /** Hot sink that broadcasts the ID of each deleted book. */
     private final Sinks.Many<String> bookDeletedSink = Sinks.many().multicast().directBestEffort();
 
-    public BookService(BookRepository bookRepository, AuthorRepository authorRepository) {
+    public BookService(BookRepository bookRepository, AuthorRepository authorRepository, UserRepository userRepository) {
         this.bookRepository = bookRepository;
         this.authorRepository = authorRepository;
+        this.userRepository = userRepository;
     }
 
     public Flux<Book> findAll() {
@@ -103,10 +110,37 @@ public class BookService {
                             .title(input.title())
                             .year(input.year())
                             .authorId(input.authorId())
+                            .totalCopies(input.totalCopies())
+                            .borrowedCount(0)
                             .build();
                     return bookRepository.save(book);
                 })
                 .doOnNext(book -> bookSink.tryEmitNext(book));
+    }
+
+    /**
+     * Updates title, year, author and totalCopies of an existing book.
+     * Refuses to lower totalCopies below the current borrowedCount.
+     */
+    public Mono<Book> update(String id, BookInput input) {
+        return bookRepository.findById(id)
+                .switchIfEmpty(Mono.error(new RuntimeException("Book not found: " + id)))
+                .flatMap(book -> {
+                    if (input.totalCopies() < book.getBorrowedCount()) {
+                        return Mono.error(new IllegalArgumentException(
+                                "Cannot set totalCopies to " + input.totalCopies()
+                                + " — " + book.getBorrowedCount() + " copies are currently borrowed."));
+                    }
+                    return authorRepository.findById(input.authorId())
+                            .switchIfEmpty(Mono.error(new RuntimeException("Author not found: " + input.authorId())))
+                            .flatMap(author -> {
+                                book.setTitle(input.title());
+                                book.setYear(input.year());
+                                book.setAuthorId(input.authorId());
+                                book.setTotalCopies(input.totalCopies());
+                                return bookRepository.save(book);
+                            });
+                });
     }
 
     public Mono<Boolean> delete(String id) {
@@ -130,6 +164,63 @@ public class BookService {
                     book.setCoverImage(imagePath);
                     return bookRepository.save(book);
                 });
+    }
+
+    /**
+     * Borrows a book for the given user. Requires at least one available copy
+     * and that the user has not already borrowed this book.
+     */
+    public Mono<Book> borrow(String bookId, String username) {
+        return userRepository.findByUsername(username)
+                .switchIfEmpty(Mono.error(new RuntimeException("User not found: " + username)))
+                .flatMap(user -> bookRepository.findById(bookId)
+                        .switchIfEmpty(Mono.error(new RuntimeException("Book not found: " + bookId)))
+                        .flatMap(book -> {
+                            boolean alreadyBorrowed = user.getBorrowedRecords().stream()
+                                    .anyMatch(r -> r.bookId().equals(bookId));
+                            if (alreadyBorrowed) {
+                                return Mono.error(new IllegalStateException("You have already borrowed this book."));
+                            }
+                            int available = book.getTotalCopies() - book.getBorrowedCount();
+                            if (available <= 0) {
+                                return Mono.error(new IllegalStateException("No copies available for borrowing."));
+                            }
+                            book.setBorrowedCount(book.getBorrowedCount() + 1);
+                            List<BorrowRecord> updated = new ArrayList<>(user.getBorrowedRecords());
+                            updated.add(new BorrowRecord(bookId, Instant.now()));
+                            user.setBorrowedRecords(updated);
+                            return bookRepository.save(book)
+                                    .flatMap(savedBook -> userRepository.save(user).thenReturn(savedBook));
+                        }));
+    }
+
+    /**
+     * Returns a previously borrowed book for the given user.
+     */
+    public Mono<Book> returnBook(String bookId, String username) {
+        return userRepository.findByUsername(username)
+                .switchIfEmpty(Mono.error(new RuntimeException("User not found: " + username)))
+                .flatMap(user -> bookRepository.findById(bookId)
+                        .switchIfEmpty(Mono.error(new RuntimeException("Book not found: " + bookId)))
+                        .flatMap(book -> {
+                            boolean hasBorrowed = user.getBorrowedRecords().stream()
+                                    .anyMatch(r -> r.bookId().equals(bookId));
+                            if (!hasBorrowed) {
+                                return Mono.error(new IllegalStateException("You have not borrowed this book."));
+                            }
+                            book.setBorrowedCount(Math.max(0, book.getBorrowedCount() - 1));
+                            List<BorrowRecord> updated = user.getBorrowedRecords().stream()
+                                    .filter(r -> !r.bookId().equals(bookId))
+                                    .collect(Collectors.toCollection(ArrayList::new));
+                            user.setBorrowedRecords(updated);
+                            return bookRepository.save(book)
+                                    .flatMap(savedBook -> userRepository.save(user).thenReturn(savedBook));
+                        }));
+    }
+
+    /** Computed field: available = totalCopies - borrowedCount. */
+    public int availableCount(Book book) {
+        return book.getTotalCopies() - book.getBorrowedCount();
     }
 
     /**

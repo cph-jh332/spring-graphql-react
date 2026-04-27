@@ -1,6 +1,15 @@
 export {
   AddBookDocument as ADD_BOOK,
+  UpdateBookDocument as UPDATE_BOOK,
   DeleteBookDocument as DELETE_BOOK,
+  BorrowBookDocument as BORROW_BOOK,
+  ReturnBookDocument as RETURN_BOOK,
   AddAuthorDocument as ADD_AUTHOR,
   DeleteAuthorDocument as DELETE_AUTHOR,
+  LoginDocument as LOGIN,
+  LogoutDocument as LOGOUT,
+  RegisterDocument as REGISTER,
+  CreateUserDocument as CREATE_USER,
+  DeleteUserDocument as DELETE_USER,
+  UpdateUserDocument as UPDATE_USER,
 } from "../gql/graphql";

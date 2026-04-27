@@ -1,0 +1,24 @@
+query Users {
+  users {
+    username
+    roles
+  }
+}
+
+mutation CreateUser($input: RegisterInput!) {
+  createUser(input: $input) {
+    username
+    roles
+  }
+}
+
+mutation DeleteUser($username: String!) {
+  deleteUser(username: $username)
+}
+
+mutation UpdateUser($input: UpdateUserInput!) {
+  updateUser(input: $input) {
+    username
+    roles
+  }
+}

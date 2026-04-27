@@ -6,58 +6,88 @@ import {
 	useState,
 } from "react";
 import type { ReactNode } from "react";
+import { gqlClient } from "../api/client";
+import { ME } from "../api/queries";
+import { LOGOUT } from "../api/mutations";
+import type { Role } from "../gql/graphql";
 
-const API_BASE =
-	import.meta.env.VITE_API_URL ??
-	`${window.location.protocol}//${window.location.host}`;
+export interface BorrowRecord {
+	bookId: string;
+	borrowedAt: string; // ISO-8601 instant string from backend
+}
 
 interface AuthUser {
 	username: string;
+	roles: Role[];
+	borrowedRecords: BorrowRecord[];
 }
 
 interface AuthContextValue {
 	user: AuthUser | null;
 	isAuthenticated: boolean;
-	/** Call after a successful login response to store the username in state. */
-	login: (username: string) => void;
+	/** Call after a successful login response to store the user in state. */
+	login: (username: string, roles: Role[], borrowedRecords: BorrowRecord[]) => void;
 	logout: () => Promise<void>;
-	/** True while the initial /me check is in flight (prevents flash of unauthenticated UI). */
+	/** Re-fetches the current user's me data and updates state (e.g. after borrow/return). */
+	refreshUser: () => Promise<void>;
+	/** True while the initial me check is in flight (prevents flash of unauthenticated UI). */
 	isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+function toRecords(raw: Array<{ bookId: string; borrowedAt: string }> | null | undefined): BorrowRecord[] {
+	return (raw ?? []).map((r) => ({ bookId: r.bookId, borrowedAt: r.borrowedAt }));
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
 	const [user, setUser] = useState<AuthUser | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 
-	// On mount, try to restore the session by asking the backend if the
-	// access_token cookie is still valid.
+	// On mount, try to restore session by asking the backend via GraphQL me query.
 	useEffect(() => {
-		fetch(`${API_BASE}/api/auth/me`, { credentials: "include" })
-			.then((res) => (res.ok ? res.json() : null))
-			.then((data: { username: string } | null) => {
-				if (data?.username) setUser({ username: data.username });
+		gqlClient
+			.request(ME)
+			.then((data) => {
+				if (data.me?.username) {
+					setUser({
+						username: data.me.username,
+						roles: data.me.roles,
+						borrowedRecords: toRecords(data.me.borrowedRecords),
+					});
+				}
 			})
 			.catch(() => {})
 			.finally(() => setIsLoading(false));
 	}, []);
 
-	const login = useCallback((username: string) => {
-		setUser({ username });
+	const login = useCallback((username: string, roles: Role[], borrowedRecords: BorrowRecord[]) => {
+		setUser({ username, roles, borrowedRecords });
 	}, []);
 
 	const logout = useCallback(async () => {
-		await fetch(`${API_BASE}/api/auth/logout`, {
-			method: "POST",
-			credentials: "include",
-		}).catch(() => {});
+		await gqlClient.request(LOGOUT).catch(() => {});
 		setUser(null);
+	}, []);
+
+	const refreshUser = useCallback(async () => {
+		try {
+			const data = await gqlClient.request(ME);
+			if (data.me?.username) {
+				setUser({
+					username: data.me.username,
+					roles: data.me.roles,
+					borrowedRecords: toRecords(data.me.borrowedRecords),
+				});
+			}
+		} catch {
+			// ignore
+		}
 	}, []);
 
 	return (
 		<AuthContext.Provider
-			value={{ user, isAuthenticated: user !== null, login, logout, isLoading }}
+			value={{ user, isAuthenticated: user !== null, login, logout, refreshUser, isLoading }}
 		>
 			{children}
 		</AuthContext.Provider>

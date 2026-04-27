@@ -5,10 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "../context/AuthContext";
-
-const API_BASE =
-	import.meta.env.VITE_API_URL ??
-	`${window.location.protocol}//${window.location.host}`;
+import { gqlClient } from "../api/client";
+import { LOGIN } from "../api/mutations";
 
 export function LoginPage() {
 	const { login } = useAuth();
@@ -24,21 +22,17 @@ export function LoginPage() {
 		setError(null);
 		setIsPending(true);
 		try {
-			const res = await fetch(`${API_BASE}/api/auth/login`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				credentials: "include",
-				body: JSON.stringify({ username, password }),
+			const data = await gqlClient.request(LOGIN, {
+				input: { username, password },
 			});
-			if (!res.ok) {
-				setError("Invalid username or password.");
-				return;
-			}
-			const data = (await res.json()) as { username: string };
-			login(data.username);
+			login(
+				data.login.username,
+				data.login.roles,
+				(data.login.borrowedRecords ?? []).map((r) => ({ bookId: r.bookId, borrowedAt: r.borrowedAt })),
+			);
 			navigate("/");
 		} catch {
-			setError("Network error. Please try again.");
+			setError("Invalid username or password.");
 		} finally {
 			setIsPending(false);
 		}

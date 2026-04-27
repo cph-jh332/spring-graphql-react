@@ -2,6 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { print } from "graphql";
 import { useEffect, useState } from "react";
 import { AUTHOR_ADDED_SUBSCRIPTION, AUTHOR_DELETED_SUBSCRIPTION } from "../api/queries";
+import { queryKeys } from "../api/queryKeys";
 import { wsClient } from "../api/wsClient";
 import type { OnAuthorAddedSubscription, OnAuthorDeletedSubscription } from "../gql/graphql";
 
@@ -17,7 +18,7 @@ export function useAuthorSubscription() {
         next: ({ data }) => {
           if (data?.authorAdded) {
             setNewAuthors((prev) => [data.authorAdded, ...prev].slice(0, 20));
-            queryClient.invalidateQueries({ queryKey: ["authors"] });
+            queryClient.invalidateQueries({ queryKey: queryKeys.authors.all });
           }
         },
         error: (err) => {
@@ -33,8 +34,8 @@ export function useAuthorSubscription() {
       {
         next: ({ data }) => {
           if (data?.authorDeleted) {
-            queryClient.invalidateQueries({ queryKey: ["authors"] });
-            queryClient.invalidateQueries({ queryKey: ["books"] });
+            queryClient.invalidateQueries({ queryKey: queryKeys.authors.all });
+            queryClient.invalidateQueries({ queryKey: queryKeys.books.all });
           }
         },
         error: (err) => console.error("authorDeleted subscription error:", err),
